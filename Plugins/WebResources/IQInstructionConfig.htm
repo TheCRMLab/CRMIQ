@@ -1,0 +1,462 @@
+﻿<html>
+<head>
+</head>
+<body style='overflow: auto; font-family: "Segoe UI"; -ms-word-wrap: break-word;'>
+    ﻿
+
+    <style type="text/css">
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+            padding: 0px;
+            overflow: hidden;
+        }
+
+        #entityTableUpdating {
+            opacity: 0.75;
+            -moz-opacity: 0.4;
+            filter: alpha(opacity=40);
+            display: block;
+            background-color: #fff;
+            z-index: 300;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+            text-align: center;
+        }
+
+            #entityTableUpdating h3 {
+                vertical-align: middle;
+                margin-top: 25%;
+            }
+    </style>
+
+    <title>IQ Query Configuration</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=10">
+    <link href="Styles/jqx.base.css" rel="stylesheet" type="text/css">
+
+    <script src="../ClientGlobalContext.js.aspx" type="text/javascript"></script>
+    <script src="Scripts/SDK.MetaData.js" type="text/javascript"></script>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript"></script>
+
+    <script src="Scripts/jqxcore.js" type="text/javascript"></script>
+    <script src="Scripts/jqxbuttons.js" type="text/javascript"></script>
+    <script src="Scripts/jqxpanel.js" type="text/javascript"></script>
+    <script src="Scripts/jqxscrollbar.js" type="text/javascript"></script>
+    <script src="Scripts/jqxlistbox.js" type="text/javascript"></script>
+    <script src="Scripts/jqxcombobox.js" type="text/javascript"></script>
+
+    <script src="Scripts/jqxmenu.js" type="text/javascript"></script>
+    <script src="Scripts/jqxgrid.js" type="text/javascript"></script>
+    <script src="Scripts/jqxgrid.edit.js" type="text/javascript"></script>
+    <script src="Scripts/jqxgrid.selection.js" type="text/javascript"></script>
+    <script src="Scripts/jqxcheckbox.js" type="text/javascript"></script>
+    <script src="Scripts/jqxdata.js" type="text/javascript"></script>
+    <script src="Scripts/jqxbuttons.js" type="text/javascript"></script>
+    <script src="Scripts/jqxgrid.columnsresize.js" type="text/javascript"></script>
+    <script src="Scripts/jqxgrid.sort.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var allEntityMetadata;
+        var instructions = new Object();
+        var clientUrl = Xrm.Page.context.getClientUrl();
+        var ODATA_ENDPOINT = "/XRMServices/2011/OrganizationData.svc";
+        var dataSetName = "cobalt_iqeventhandlerSet"
+        var IQEventhandler = null;
+        var IqResponse = null;
+        var IneligibleEntitiesObjectCodes = [8, 10, 1036, 1200, 2029, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752];
+        var entityList = null;
+
+        $("#entityTableLoading").show();
+        GenerateInitialList();
+        SDK.Metadata.RetrieveAllEntities(SDK.Metadata.EntityFilters.Entity,
+			false,
+			successRetrieveAllEntities,
+			errorHandler);
+
+        function generateUUID() {
+            var d = new Date().getTime();
+            var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = (d + Math.random() * 16) % 16 | 0;
+                d = Math.floor(d / 16);
+                return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+            return uuid;
+        }
+
+        function GenerateInitialList() {
+            var entity = new Object();
+            entity.cobalt_name = "RetrieveExistingPlugins";
+
+            var jsonEntity = window.JSON.stringify(entity);
+            var createRecordReq = new XMLHttpRequest();
+            var ODataPath = Xrm.Page.context.prependOrgName("/xrmservices/2011/organizationdata.svc");
+            createRecordReq.open('POST', ODataPath + "/cobalt_iqeventhandlerSet", false);
+            createRecordReq.setRequestHeader("Accept", "application/json");
+            createRecordReq.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            createRecordReq.onreadystatechange = function () {
+                createRecordReqCallBack(this);
+            };
+            createRecordReq.send(jsonEntity);
+        }
+
+        function createRecordReqCallBack(iqRequest) {
+            if (iqRequest.readyState == 4 /* complete */) {
+                iqRequest.onreadystatechange = null; //avoids memory leaks
+                if (iqRequest.status == 201) {
+                    //Success
+                    IQEventhandler = JSON.parse(iqRequest.responseText).d;
+                    IqResponse = JSON.parse(IQEventhandler.cobalt_Response);
+                    deleteEventHandler();
+                }
+                else {
+                    //Failure
+                    errorHandler(iqRequest);
+                }
+            }
+        };
+
+        function deleteEventHandler() {
+            var deleteRecordReq = new XMLHttpRequest();
+            var ODataPath = Xrm.Page.context.prependOrgName("/xrmservices/2011/organizationdata.svc");
+            deleteRecordReq.open('POST', ODataPath + "/cobalt_iqeventhandlerSet(guid'" + IQEventhandler.cobalt_iqeventhandlerId.toString() + "')", true);
+            deleteRecordReq.setRequestHeader("Accept", "application/json");
+            deleteRecordReq.setRequestHeader("X-HTTP-Method", "DELETE");
+            deleteRecordReq.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            deleteRecordReq.onreadystatechange = function () {
+                deleteRecordReqCallBack(this);
+            };
+
+            deleteRecordReq.send(null);
+        }
+
+        function deleteRecordReqCallBack(iqRequest) {
+            if (iqRequest.readyState == 4 /* complete */) {
+                iqRequest.onreadystatechange = null; //avoids memory leaks
+                if (iqRequest.status >= 200 && iqRequest.status < 300) {
+                    //Success
+                    //alert("Delete worked");
+                }
+                else {
+                    //Failure
+                    errorHandler(iqRequest);
+                }
+            }
+        };
+
+        function errorHandler(error) {
+            if (error != null && error.responseText != null) {
+                var errorObject = window.JSON.parse(error.responseText);
+                if (errorObject != null && errorObject.error != null && errorObject.error.message != null && errorObject.error.message.value != null) {
+                    alert("Error while Updating IQ Plugins: " + errorObject.error.message.value.toString());
+                }
+                else {
+                    alert("Error: " + error.responseText.toString());
+                }
+            }
+            else {
+                alert("Error: " + error.responseText.toString());
+            }
+        }
+
+        var imagerenderer = function (row, datafield, value) {
+            return '<img style="height:16px; width:16px; padding-left:5px; padding-top:5px" onerror="imgError(this);" src="' + value + '"/>';
+        }
+
+        function imgError(image) {
+            image.src = "/_imgs/ico_16_customEntity.gif";
+        }
+
+        function successRetrieveAllEntities(entityMetadataCollection) {
+            allEntityMetadata = entityMetadataCollection;
+            entityList = new Array();
+            var count = 0;
+
+            for (var i = 0; i < allEntityMetadata.length; i++) {
+                var entityMetadata = allEntityMetadata[i];
+                if (entityMetadata.DisplayName.UserLocalizedLabel != null && entityMetadata.ObjectTypeCode != null
+                    && entityMetadata.IsValidForAdvancedFind && jQuery.inArray(entityMetadata.ObjectTypeCode, IneligibleEntitiesObjectCodes) == -1) {
+                    var url = "/_imgs/ico_16_customEntity.gif";
+
+                    if (entityMetadata.ObjectTypeCode >= 10000 && entityMetadata.IconSmallName != null) {
+                        url = clientUrl + "/WebResources/" + entityMetadata.IconSmallName.toString();
+                    } else {
+                        url = "/_imgs/ico_16_" + entityMetadata.ObjectTypeCode.toString() + ".gif";
+
+                        if (!UrlExists(url)) {
+                            url = "/_imgs/ico_16_" + entityMetadata.ObjectTypeCode.toString() + ".png";
+                        }
+
+                        //last resort
+                        if (entityMetadata.IconSmallName != null && !UrlExists(url)) {
+                            url = clientUrl + "/WebResources/" + entityMetadata.IconSmallName.toString();
+                        }
+                    }
+
+                    if (!UrlExists(url)) {
+                        url = "/_imgs/ico_16_customEntity.gif";
+                    }
+
+                    var item = {
+                        enabled: true,
+                        imageSrc: url,
+                        schemaName: entityMetadata.SchemaName,
+                        logicalName: entityMetadata.LogicalName,
+                        displayName: entityMetadata.DisplayName.UserLocalizedLabel.Label,
+                        objectTypeCode: entityMetadata.ObjectTypeCode
+                    };
+                    entityList[i] = item;
+                }
+            }
+
+            entityList = entityList.filter(function (item) {
+                return !(item == null);
+            });
+
+            entityList.sort(function (a, b) {
+
+                if (a.displayName != null && b.displayName != null && a.displayName < b.displayName) {
+                    return -1;
+                }
+                if (a.displayName != null && b.displayName != null && a.displayName > b.displayName) {
+                    return 1;
+                }
+                return 0;
+            });
+
+            $("#entityTableLoading").hide();
+
+            $("#updatingPluginsImg").attr("src", clientUrl + "/WebResources/cobalt_/Images/LoadingLine.gif");
+
+            var source =
+            {
+                localdata: entityList,
+                datatype: "array"
+            };
+            var dataAdapter = new $.jqx.dataAdapter(source, {
+                loadComplete: function (entityList) { },
+                loadError: function (xhr, status, error) { }
+            });
+
+            while (IqResponse == null) { }
+
+            $("#entityTable").jqxGrid(
+            {
+                sortable: true,
+                selectionmode: "checkbox",
+                columnsresize: true,
+                source: dataAdapter,
+                width: "98%",
+                height: "60%",
+                columns: [
+				  { text: '', datafield: 'imageSrc', editable: false, cellsrenderer: imagerenderer, sortable: false },
+				  { text: 'Display Name', editable: false, datafield: 'displayName', width: '32.20%' },
+				  { text: 'Name', editable: false, datafield: 'logicalName', width: '32.20%' },
+				  { text: 'Schema Name', editable: false, datafield: 'schemaName', width: '32.20%' }
+                ]
+            });
+
+            //select rows that have the plugin
+            GridRowSelection();
+
+            //$("#entityTable").jqxGrid('autoresizecolumns');
+            for (m = 0; m < $("#entityTable").jqxGrid("getdatainformation").rowscount; m++) {
+                $("#entityTable").jqxGrid('setrowheight', m, 25);
+            }
+
+            $("#entityTable").jqxGrid({ height: "60%" });
+
+            RadioButtonSelection();
+        }
+
+        function RadioButtonSelection() {
+            if (IqResponse != null && IqResponse.AllEntities) {
+                allEntitiesSelected();
+                $("#allEntitiesRadioButton").prop("checked", true);
+            }
+            else if($('#entityTable').jqxGrid('getselectedrowindexes').length > 0)
+            {
+                someEntitiesSelected();
+                $("#someEntitiesRadioButton").prop("checked", true);
+            }
+            else {
+                noneEntitiesSelected();
+                $("#noneEntitiesRadioButton").prop("checked", true);
+            }
+        }
+
+        function GridRowDeselectAll() {
+            var rows = $('#entityTable').jqxGrid('getrows');
+            var rowsCount = rows.length;
+
+            for (var i = 0; i < rowsCount; i++) {
+                $('#entityTable').jqxGrid('unselectrow', i);
+            }
+        }
+
+        function GridRowSelection() {
+            if (IqResponse != null && IqResponse.ObjectTypeCodes != null) {
+                var rows = $('#entityTable').jqxGrid('getrows');
+                var rowsCount = rows.length;
+
+                for (var i = 0; i < rowsCount; i++) {
+                    var rowValue = $('#entityTable').jqxGrid('getcellvalue', i, "schemaName");
+
+                    for (var j = 0; j < entityList.length; ++j) {
+                        if (entityList[j].schemaName == rowValue) {
+                            for (var k = 0; k < IqResponse.ObjectTypeCodes.length; ++k) {
+                                if (entityList[j].objectTypeCode == IqResponse.ObjectTypeCodes[k]) {
+                                    $('#entityTable').jqxGrid('selectrow', i);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                };
+            }
+        }
+
+        function UrlExists(url) {
+            var http = new XMLHttpRequest();
+            http.open('HEAD', url, false);
+            http.send();
+            return http.status != 404;
+        }
+
+        function allEntitiesSelected() {
+            GridRowDeselectAll();
+            $("#entityTable").hide();
+        }
+
+        function noneEntitiesSelected() {
+            GridRowDeselectAll();
+            $("#entityTable").hide();
+        }
+
+        function someEntitiesSelected() {
+            $("#entityTable").show();
+            $("#entityTable").jqxGrid({ height: "60%" });
+        }
+
+        function getText(node) {
+            if (typeof (node.innerText) != "undefined") {
+                return node.innerText;
+            }
+            else {
+                return node.textContent;
+            }
+        }
+
+        function get(name) {
+            if (name = (new RegExp('[?&]' + encodeURIComponent(name) + '=([^&]*)')).exec(location.search))
+                return decodeURIComponent(name[1]);
+        }
+
+
+        function fixContextMenu() {
+            if (document && document._events && document._events.unload && document._events.unload[0] && document._events.unload[0].handler) {
+                document._events.unload[0].handler();
+            }
+        }
+
+        function sendMessage() {
+            $("#entityTableUpdating").fadeIn(500);
+            $("#updateButton").prop("disabled", true);
+
+            var ObjectTypeCodes = new Array();
+            var AllEntities = $("#allEntitiesRadioButton").is(':checked');
+
+            if (AllEntities != null && !AllEntities) {
+                var selectedRowIndexes = $('#entityTable').jqxGrid('getselectedrowindexes');
+                for (var i = 0; i < selectedRowIndexes.length; i++) {
+                    var selectedRowData = $('#entityTable').jqxGrid('getrowdata', selectedRowIndexes[i]);
+                    if (selectedRowData != null && selectedRowData.objectTypeCode != null) {
+                        ObjectTypeCodes[i] = selectedRowData.objectTypeCode;
+                    }
+                }
+
+                ObjectTypeCodes = ObjectTypeCodes.filter(function (item) {
+                    return !(item == null);
+                });
+            }
+
+            GenerateUpdatedList(AllEntities, ObjectTypeCodes);
+        }
+
+        function GenerateUpdatedList(AllEntities, ObjectTypeCodes) {
+            var entity = new Object();
+            entity.cobalt_name = "UpdatePluginEntities";
+            entity.cobalt_Request = '{"AllEntities":' + AllEntities.toString() + ', "ObjectTypeCodes":[' + ObjectTypeCodes.toString() + ']}';
+
+            var jsonEntity = window.JSON.stringify(entity);
+            var createRecordReq = new XMLHttpRequest();
+            var ODataPath = Xrm.Page.context.prependOrgName("/xrmservices/2011/organizationdata.svc");
+            createRecordReq.open('POST', ODataPath + "/cobalt_iqeventhandlerSet", true);
+            createRecordReq.setRequestHeader("Accept", "application/json");
+            createRecordReq.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            createRecordReq.onreadystatechange = function () {
+                updatePluginReqCallBack(this);
+            };
+            createRecordReq.send(jsonEntity);
+        }
+
+        function updatePluginReqCallBack(iqRequest) {
+            if (iqRequest.readyState == 4 /* complete */) {
+                iqRequest.onreadystatechange = null; //avoids memory leaks
+                if (iqRequest.status == 201) {
+                    //Success
+                    IQEventhandler = JSON.parse(iqRequest.responseText).d;
+                    IqResponse = JSON.parse(IQEventhandler.cobalt_Response);
+                    $("#entityTableUpdating").fadeOut(500);
+                    $("#updateButton").prop("disabled", false);
+                    deleteEventHandler();
+                    GridRowSelection();
+                    RadioButtonSelection();
+                }
+                else {
+                    //Failure
+                    $("#entityTableUpdating").fadeOut(500);
+                    $("#updateButton").prop("disabled", false);
+                    errorHandler(iqRequest);
+                }
+            }
+        };
+    </script>
+    <style type="text/css">
+        .jqx-icon-arrow-up {
+            background-image: url('../cobalt_/Images/iconup.png');
+        }
+    </style>
+
+
+    <div id="mainSplitter">
+        <div style="margin: 15px;">
+            <h3 id="entityHead">Intelligent Query Configuration</h3>
+            <p>
+                By default, Intelligent Query (IQ) is registered to run on all entities as a retrieve multiple plugin. This means that all entities, even if they can't be shown in the Advanced Find, will execute the IQ plugin on retrieve.
+                This configuration page allows you to enable the IQ plugin for all entities or select which Advanced Find eligibile entities for which you want IQ registered.
+            </p>
+
+            <font size="3">Happy finding!</font><br><br>
+
+            <form id="entityradioselection" action="">
+                <font size="3"><b>Enable IQ For:</b></font><br>
+                <input name="radioSelect" id="allEntitiesRadioButton" style="margin-top: 3px;" onclick="javascript: allEntitiesSelected();" type="radio" value="all">All Entities<br>
+                <input name="radioSelect" id="someEntitiesRadioButton" onclick="javascript: someEntitiesSelected();" type="radio" value="some">Some Entities<br>
+                <input name="radioSelect" id="noneEntitiesRadioButton" onclick="javascript: noneEntitiesSelected();" type="radio" value="none">No Entities
+            </form>
+            <button id="updateButton" style="margin: 5px; height: 27px; clear: both; float: left;" onclick="javascript: sendMessage();">Save</button>
+            <div id="entityTableLoading" style="padding-left: 5px; clear: both; margin-top: 3px; float: left;"><img alt="Loading Entities..." src="styles/jstree/throbber.gif">&nbsp;Loading  Entities...</div>
+            <div id="entityTable" style="height: 90%; clear: both; margin-right: 45px; margin-left: 5px; float: left;"></div>
+            <div id="entityTableUpdating" style="display: none;"><h3>Updating Plugins<br></h3><img id="updatingPluginsImg" alt="Updating Plugins..." src="">&nbsp;</div>
+            <div style="padding-bottom: 50px;">&nbsp;</div>
+        </div>
+    </div>
+
+
+</body>
+</html>

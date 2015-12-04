@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{D3C393F6-C5D3-4000-BF47-D8EFFF94B998}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Cobalt.Components.CrmIQ.Plugin</RootNamespace>
+    <AssemblyName>Cobalt.Components.CrmIQ.Plugins</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="microsoft.crm.sdk.proxy">
+      <HintPath>..\..\..\Adapters\Crm\Platform\Crm2011\bin\Debug\microsoft.crm.sdk.proxy.dll</HintPath>
+    </Reference>
+    <Reference Include="microsoft.xrm.sdk">
+      <HintPath>..\..\..\Adapters\Crm\Platform\Crm2011\bin\Debug\microsoft.xrm.sdk.dll</HintPath>
+    </Reference>
+    <Reference Include="microsoft.xrm.sdk.workflow">
+      <HintPath>..\..\..\Adapters\Crm\Platform\Crm2011\bin\Debug\microsoft.xrm.sdk.workflow.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Activities" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Data.Services.Client" />
+    <Reference Include="System.DirectoryServices" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Workflow.ComponentModel" />
+    <Reference Include="System.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="FetchXmlExpression.cs" />
+    <Compile Include="Instructions\ConvertFetchXmlInstruction.cs" />
+    <Compile Include="Instructions\ConvertFetchXmlResponse.cs" />
+    <Compile Include="Instructions\Instruction.cs" />
+    <Compile Include="Instructions\InstructionName.cs" />
+    <Compile Include="Instructions\RetrieveExistingPluginsInstruction.cs" />
+    <Compile Include="Instructions\RetrieveExistingPluginsResponse.cs" />
+    <Compile Include="Instructions\UpdatePluginEntitiesInstruction.cs" />
+    <Compile Include="Instructions\UpdatePluginEntitiesResponse .cs" />
+    <Compile Include="PluginAdapter.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ThirdPartyAssemblies\microsoft.crm.sdk.proxy.dll" />
+    <Content Include="ThirdPartyAssemblies\microsoft.xrm.sdk.dll" />
+    <Content Include="ThirdPartyAssemblies\microsoft.xrm.sdk.workflow.dll" />
+    <Content Include="WebResources\IQInstructionConfig.htm" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Solutions\CRMIQ_1_1_1_2013.zip" />
+    <None Include="Solutions\CRMIQ_1_1_1_2013_managed.zip" />
+    <None Include="Solutions\CRMIQ_1_1_1_2015.zip" />
+    <None Include="Solutions\CRMIQ_1_1_1_2015_managed.zip" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
