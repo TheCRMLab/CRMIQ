@@ -197,6 +197,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
 
             }
         }
+        #endregion
 
         public static SortedDictionary<string, EntityMetadata> CrmMetadata { get; set; }
 
@@ -258,10 +259,40 @@ namespace Cobalt.Components.CrmIQ.Plugin
                 {
                     outFilterExpressionList = new List<FilterExpression>();
                 }
-                outFilterExpressionList.Add(childFilter);
-                if (filterContainer != null)
+
+                //Or criteria move all to parent queryexpression
+                if (childFilter.FilterOperator == LogicalOperator.Or)
                 {
-                    filterContainer.Remove(childFilter);
+                    outFilterExpressionList.Add(childFilter);
+                    if (filterContainer != null)
+                    {
+                        filterContainer.Remove(childFilter);
+                    }
+                }
+                //And criteria move only the null statement
+                else if (childFilter.FilterOperator == LogicalOperator.And)
+                {
+                    if(childFilter.Conditions != null)
+                    {
+                        FilterExpression newFilter = new FilterExpression();
+                        List<ConditionExpression> newConditions = new List<ConditionExpression>();
+                        List<ConditionExpression> newChildFilterCriteriaConditions = new List<ConditionExpression>();
+                        for(int i = childFilter.Conditions.Count - 1; i >= 0; i--)
+                        {
+                            if (CrmMetadata != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && CrmMetadata.ContainsKey(linkEntity.LinkToEntityName) && CrmMetadata[linkEntity.LinkToEntityName].PrimaryIdAttribute == childFilter.Conditions[i].AttributeName && childFilter.Conditions[i].Operator == ConditionOperator.Null)
+                            {
+                                newConditions.Add(linkEntity.LinkCriteria.Conditions[i]);
+                                continue;
+                            }
+                            childFilter.Conditions[i].EntityName = string.Empty;
+                            newChildFilterCriteriaConditions.Add(childFilter.Conditions[i]);
+                        }
+
+                        childFilter = new FilterExpression();
+                        childFilter.Conditions.AddRange(newChildFilterCriteriaConditions.ToArray());
+                        newFilter.Conditions.AddRange(newConditions);
+                        outFilterExpressionList.Add(newFilter);
+                    }
                 }
             }
 
@@ -322,8 +353,33 @@ namespace Cobalt.Components.CrmIQ.Plugin
                 {
                     if (UpdateFilterExpression(parentLinkEntity, linkEntity, linkEntity.LinkCriteria))
                     {
-                        outFilterExpressionList.Add(linkEntity.LinkCriteria);
-                        linkEntity.LinkCriteria = new FilterExpression();
+                        //Or criteria move all to parent queryexpression
+                        if (linkEntity.LinkCriteria.FilterOperator == LogicalOperator.Or)
+                        {
+                            outFilterExpressionList.Add(linkEntity.LinkCriteria);
+                            linkEntity.LinkCriteria = new FilterExpression();
+                        }
+                        //And criteria move only the null statement
+                        else if (linkEntity.LinkCriteria.FilterOperator == LogicalOperator.And)
+                        {
+                            FilterExpression newFilter = new FilterExpression();
+                            List<ConditionExpression> newConditions = new List<ConditionExpression>();
+                            List<ConditionExpression> newLinkCriteriaConditions = new List<ConditionExpression>();
+                            for (int i = linkEntity.LinkCriteria.Conditions.Count - 1; i >= 0; i--)
+                            {
+                                if (CrmMetadata != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && CrmMetadata.ContainsKey(linkEntity.LinkToEntityName) && CrmMetadata[linkEntity.LinkToEntityName].PrimaryIdAttribute == linkEntity.LinkCriteria.Conditions[i].AttributeName && linkEntity.LinkCriteria.Conditions[i].Operator == ConditionOperator.Null)
+                                {
+                                    newConditions.Add(linkEntity.LinkCriteria.Conditions[i]);
+                                    continue;
+                                }
+                                linkEntity.LinkCriteria.Conditions[i].EntityName = string.Empty;
+                                newLinkCriteriaConditions.Add(linkEntity.LinkCriteria.Conditions[i]);
+                            }
+                            linkEntity.LinkCriteria = new FilterExpression();
+                            linkEntity.LinkCriteria.Conditions.AddRange(newLinkCriteriaConditions.ToArray());
+                            newFilter.Conditions.AddRange(newConditions);
+                            outFilterExpressionList.Add(newFilter);
+                        }
                     }
                     if (linkEntity.LinkCriteria != null && linkEntity.LinkCriteria.Filters != null)
                     {
@@ -430,20 +486,59 @@ namespace Cobalt.Components.CrmIQ.Plugin
                     if (UpdateFilterExpression(parentLinkEntity, linkEntity, linkCriteria))
                     {
                         returnValue = true;
-                        outFilterExpressionList.Add(linkCriteria);
-                        if (linkEntity.Items != null)
+                        //Or criteria move all to parent fetchexpression
+                        if (linkCriteria.type == FetchFilterType.or)
                         {
-                            for (int i = 0; i < linkEntity.Items.Length; i++)
+                            outFilterExpressionList.Add(linkCriteria);
+                            if (linkEntity.Items != null)
                             {
-                                if (linkEntity.Items[i] is FetchFilter)
+                                for (int i = 0; i < linkEntity.Items.Length; i++)
                                 {
-                                    linkEntity.Items[i] = new FetchFilter();
-                                    break;
+                                    if (linkEntity.Items[i] is FetchFilter)
+                                    {
+                                        linkEntity.Items[i] = new FetchFilter();
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        //And criteria move only the null statement
+                        else if (linkCriteria.type == FetchFilterType.and)
+                        {
+                            FetchFilter newFilter = new FetchFilter();
+                            List<FetchCondition> newConditions = new List<FetchCondition>();
+                            if (linkEntity.Items != null)
+                            {
+                                for (int i = 0; i < linkEntity.Items.Length; i++)
+                                {
+                                    FetchFilter innerFilter = linkEntity.Items[i] as FetchFilter;
+                                    if (innerFilter != null)
+                                    {
+                                        if(innerFilter.Items != null)
+                                        {
+                                            List<object> newInnerFilterItems = new List<object>();
+                                            for (int j = innerFilter.Items.Length - 1; j >= 0; j--)
+                                            {
+                                                FetchCondition innerCondition = innerFilter.Items[j] as FetchCondition;
+                                                if(innerCondition != null)
+                                                {
+                                                    if (CrmMetadata != null && linkEntity != null && CrmMetadata.ContainsKey(linkEntity.name) && CrmMetadata[linkEntity.name].PrimaryIdAttribute == innerCondition.attribute && innerCondition.@operator == FetchOperator.@null)
+                                                    {
+                                                        newConditions.Add(innerCondition);
+                                                        continue;
+                                                    }
+                                                }
+                                                newInnerFilterItems.Add(innerFilter.Items[j]);
+                                            }
+                                            innerFilter.Items = newInnerFilterItems.ToArray();
+                                        }
+                                    }
+                                }
+                            }
+                            newFilter.Items = newConditions.ToArray();
+                            outFilterExpressionList.Add(newFilter);
+                        }
                     }
-
                     if (linkCriteria != null && linkCriteria.Items != null)
                     {
                         for (int i = linkCriteria.Items.Length - 1; i >= 0; i--)
@@ -467,7 +562,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
                     }
                 }
             }
-
 
             if (linkEntity != null)
             {
@@ -733,7 +827,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
             }
             return returnValue;
         }
-        #endregion
 
         #region Protected Methods
         protected static string GetMessagePropertyName(string messageName)
