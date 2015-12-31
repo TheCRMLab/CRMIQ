@@ -97,6 +97,10 @@
     <None Include="Solutions\CRMIQ_1_1_1_2013_managed.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2015.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2015_managed.zip" />
+    <None Include="Solutions\CRMIQ_1_2_0_2013.zip" />
+    <None Include="Solutions\CRMIQ_1_2_0_2013_managed.zip" />
+    <None Include="Solutions\CRMIQ_1_2_0_2015.zip" />
+    <None Include="Solutions\CRMIQ_1_2_0_2015_managed.zip" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
