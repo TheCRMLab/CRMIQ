@@ -281,15 +281,17 @@ namespace Cobalt.Components.CrmIQ.Plugin
                         {
                             if (CrmMetadata != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && CrmMetadata.ContainsKey(linkEntity.LinkToEntityName) && CrmMetadata[linkEntity.LinkToEntityName].PrimaryIdAttribute == childFilter.Conditions[i].AttributeName && childFilter.Conditions[i].Operator == ConditionOperator.Null)
                             {
-                                newConditions.Add(linkEntity.LinkCriteria.Conditions[i]);
+                                newConditions.Add(childFilter.Conditions[i]);
                                 continue;
                             }
                             childFilter.Conditions[i].EntityName = string.Empty;
                             newChildFilterCriteriaConditions.Add(childFilter.Conditions[i]);
                         }
 
+                        filterContainer.Remove(childFilter);
                         childFilter = new FilterExpression();
                         childFilter.Conditions.AddRange(newChildFilterCriteriaConditions.ToArray());
+                        filterContainer.Add(childFilter);
                         newFilter.Conditions.AddRange(newConditions);
                         outFilterExpressionList.Add(newFilter);
                     }

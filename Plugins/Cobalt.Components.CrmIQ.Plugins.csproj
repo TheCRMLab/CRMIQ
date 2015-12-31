@@ -45,8 +45,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>CobaltPublicPrivateKeyFile.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="microsoft.crm.sdk.proxy">
@@ -93,6 +92,7 @@
     <Content Include="WebResources\IQInstructionConfig.htm" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CobaltPublicPrivateKeyFile.snk" />
     <None Include="Solutions\CRMIQ_1_1_1_2013.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2013_managed.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2015.zip" />

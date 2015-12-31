@@ -1502,6 +1502,20 @@
         /// <remarks/>
         [System.Xml.Serialization.XmlEnumAttribute("not-end-with")]
         notendwith,
+
+        under,
+
+        [System.Xml.Serialization.XmlEnumAttribute("eq-or-under")]
+        eqorunder,
+
+        [System.Xml.Serialization.XmlEnumAttribute("not-under")]
+        notunder,
+
+        above,
+
+        [System.Xml.Serialization.XmlEnumAttribute("eq-or-above")]
+        eqorabove
+
     }
 
     /// <remarks/>
@@ -1824,6 +1838,7 @@
 
         public static FetchXmlExpression Deserialize(string xml)
         {
+            xml = xml.Replace("\"True\"", "\"true\"").Replace("\"False\"", "\"false\"");
             // DeSerialize the XML into an Entity and return the Entity
             XmlSerializer serializer = new XmlSerializer(typeof(FetchXmlExpression));
             // Declare a CRM Entity
