@@ -94,6 +94,31 @@ namespace Cobalt.Components.CrmIQ.Plugin
                     preImageEntity = this.RetrieveTargetEntity(context, serviceFactory, messagePropertyName);
                     postImageEntity = this.RetrieveTargetEntity(context, serviceFactory, ParameterName.RelatedEntities);
                 }
+                else if ((context.MessageName.ToLower() == "addmembersbyfetchxml" || context.MessageName.ToLower() == "removemembersbyfetchxml") && context.InputParameters.ContainsKey("FetchXml"))
+                {
+                    FetchExpression objFetchExpression = new FetchExpression(context.InputParameters["FetchXml"].ToString());
+                    if (this.UpdateQuery(service, tracer, objFetchExpression))
+                    {
+                        var conversionRequest = new FetchXmlToQueryExpressionRequest
+                        {
+                            FetchXml = objFetchExpression.Query
+                        };
+
+
+                        FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
+                        fetched.Query.NoLock = true;
+                        QueryExpression oneOffQuery = fetched.Query;
+                        QueryExpression qe = UpdateQuery(service, tracer, oneOffQuery);
+
+                        var queryRequest = new QueryExpressionToFetchXmlRequest
+                        {
+                            Query = qe
+                        };
+
+                        QueryExpressionToFetchXmlResponse fetch = (QueryExpressionToFetchXmlResponse)service.Execute(queryRequest);
+                        context.InputParameters["FetchXml"] = fetch.FetchXml;
+                    }
+                }
                 else if (context.Stage == (int)RequestStage.PostOperation || context.Stage == (int)RequestStage.PostOperationDeprecated)
                 {
                     preImageEntity = this.RetrievePreImageEntity(context);
