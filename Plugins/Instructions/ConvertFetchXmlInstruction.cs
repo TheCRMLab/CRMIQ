@@ -110,11 +110,11 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
             {
                 while (x < filter.Conditions.Count())
                 {
-                    if (Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata.ContainsKey(linkEntity.LinkToEntityName) && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[linkEntity.LinkToEntityName].PrimaryIdAttribute == filter.Conditions[x].AttributeName && filter.Conditions[x].Operator == ConditionOperator.Null)
+                    if (this.MetaDataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && this.MetaDataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && this.MetaDataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == filter.Conditions[x].AttributeName && filter.Conditions[x].Operator == ConditionOperator.Null)
                     {
                         if (parentLinkEntity != null && !string.IsNullOrEmpty(parentLinkEntity.LinkToEntityName))
                         {
-                            if (Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata.ContainsKey(parentLinkEntity.LinkToEntityName) && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[parentLinkEntity.LinkToEntityName].IsIntersect != null && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[parentLinkEntity.LinkToEntityName].IsIntersect.Value)
+                            if (this.MetaDataService.RetrieveMetadata(parentLinkEntity.LinkToEntityName) != null && this.MetaDataService.IsIntersect(parentLinkEntity.LinkToEntityName))
                             {
                                 if (string.IsNullOrEmpty(parentLinkEntity.EntityAlias))
                                 {
@@ -378,11 +378,11 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
             {
                 while (x < filterConditions.Count)
                 {
-                    if (Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata != null && linkEntity != null && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata.ContainsKey(linkEntity.name) && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[linkEntity.name].PrimaryIdAttribute == filterConditions[x].attribute && filterConditions[x].@operator == FetchOperator.@null)
+                    if (this.MetaDataService != null && linkEntity != null && this.MetaDataService.RetrieveMetadata(linkEntity.name) != null && this.MetaDataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == filterConditions[x].attribute && filterConditions[x].@operator == FetchOperator.@null)
                     {
                         if (parentLinkEntity != null && !string.IsNullOrEmpty(parentLinkEntity.name))
                         {
-                            if (Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata.ContainsKey(parentLinkEntity.name) && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[parentLinkEntity.name].IsIntersect != null && Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[parentLinkEntity.name].IsIntersect.Value)
+                            if (this.MetaDataService.RetrieveMetadata(parentLinkEntity.name) != null && this.MetaDataService.IsIntersect(linkEntity.name))
                             {
                                 if (string.IsNullOrEmpty(parentLinkEntity.alias))
                                 {

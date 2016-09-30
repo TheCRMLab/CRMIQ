@@ -37,8 +37,14 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
                 else
                 {
                     string entity = (processingStep.Attributes["a1.primaryobjecttypecode"] as AliasedValue).Value.ToString();
-                    EntityMetadata metadata = Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[entity];
-                    response.ObjectTypeCodes.Add(metadata.ObjectTypeCode.Value);
+                    if (this.MetaDataService != null)
+                    {
+                        EntityMetadata metadata = this.MetaDataService.RetrieveMetadata(entity);
+                        if (metadata != null && metadata.ObjectTypeCode != null && metadata.ObjectTypeCode.HasValue)
+                        {
+                            response.ObjectTypeCodes.Add(metadata.ObjectTypeCode.Value);
+                        }
+                    }
                 }
             }
 

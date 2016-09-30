@@ -36,6 +36,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
     }
     public class PluginAdapter : IPlugin
     {
+        protected MetadataService metadataService;
         public PluginAdapter(string unsecure, string secure)
         {
         }
@@ -50,6 +51,8 @@ namespace Cobalt.Components.CrmIQ.Plugin
             {
                 IOrganizationService service = serviceFactory.CreateOrganizationService(null);
                 IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+                this.metadataService = new MetadataService(service);
+
                 tracer.Trace("Current Depth: {0}", context.Depth);
                 Entity preImageEntity = null;
                 Entity postImageEntity = null;
@@ -84,10 +87,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
                             }
                         }
                     }
-                }
-                else if (context.MessageName.ToLower() == "publish" || context.MessageName.ToLower() == "publishall")
-                {
-                    CrmMetadata = null;
                 }
                 else if (context.MessageName.ToLower() == "associate" || context.MessageName.ToLower() == "disassociate")
                 {
@@ -159,15 +158,58 @@ namespace Cobalt.Components.CrmIQ.Plugin
 
                     if (postImageEntity != null)
                     {
+                        if (context.OutputParameters != null)
+                        {
+                            tracer.Trace("{0}", string.Join(",", context.OutputParameters.Keys));
+                        }
+
                         //results = PlatformContext.Current.EventDispatcher.DispatchEvent(senderInfo, EventSource.Server, context.MessageName, (RequestStage)context.Stage, (context.Mode == (int)Cobalt.Adapters.Platform.Crm2011.PluginRegistration.CrmPluginStepMode.Asynchronous), preImageEntity, postImageEntity, new object[] { context.MessageName, (RequestStage)context.Stage, context.BusinessUnitId, context.InitiatingUserId });
                     }
                     else
                     {
+                        if (context.InputParameters != null)
+                        {
+                            tracer.Trace("{0}", string.Join(",", context.InputParameters.Keys));
+                        }
+
                         if (preImageEntity.LogicalName.ToLower() == "cobalt_iqeventhandler")
                         {
                             results = this.HandleIQEvent(service, preImageEntity);
                         }
 
+                        else if (context.Depth == 1 && preImageEntity.LogicalName.ToLower() == "userquery" || preImageEntity.LogicalName.ToLower() == "savedquery")
+                        {
+                            Entity entity = this.RetrieveTargetEntity(context, serviceFactory, ParameterName.Target);
+
+                            if (entity != null && entity.Attributes != null)
+                            {
+                                tracer.Trace("{0}", string.Join(", ", entity.Attributes.Keys));
+
+                                FetchExpression objFetchExpression = new FetchExpression(entity.Attributes["fetchxml"].ToString());
+                                if (this.UpdateQuery(service, tracer, objFetchExpression))
+                                {
+                                    var conversionRequest = new FetchXmlToQueryExpressionRequest
+                                    {
+                                        FetchXml = objFetchExpression.Query
+                                    };
+
+
+                                    FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
+                                    fetched.Query.NoLock = true;
+                                    QueryExpression oneOffQuery = fetched.Query;
+                                    QueryExpression qe = UpdateQuery(service, tracer, oneOffQuery);
+
+                                    var queryRequest = new QueryExpressionToFetchXmlRequest
+                                    {
+                                        Query = qe
+                                    };
+
+                                    QueryExpressionToFetchXmlResponse fetch = (QueryExpressionToFetchXmlResponse)service.Execute(queryRequest);
+                                    entity.Attributes["fetchxml"] = fetch.FetchXml;
+                                    service.Update(entity);
+                                }
+                            }
+                        }
 
                         //results = PlatformContext.Current.EventDispatcher.DispatchEvent(senderInfo, EventSource.Server, context.MessageName, (RequestStage)context.Stage, (context.Mode == (int)Cobalt.Adapters.Platform.Crm2011.PluginRegistration.CrmPluginStepMode.Asynchronous), preImageEntity, new object[] { context.MessageName, (RequestStage)context.Stage, context.BusinessUnitId, context.InitiatingUserId });
                     }
@@ -224,33 +266,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
         }
         #endregion
 
-        public static SortedDictionary<string, EntityMetadata> CrmMetadata { get; set; }
 
-        private void LoadMetadata(IOrganizationService service)
-        {
-            if (CrmMetadata == null)
-            {
-                CrmMetadata = new SortedDictionary<string, EntityMetadata>();
-
-                RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest();
-                request.EntityFilters = Microsoft.Xrm.Sdk.Metadata.EntityFilters.Entity;
-                RetrieveAllEntitiesResponse response;
-                response = (RetrieveAllEntitiesResponse)service.Execute(request);
-                if (response != null)
-                {
-                    foreach (Microsoft.Xrm.Sdk.Metadata.EntityMetadata entity in response.EntityMetadata)
-                    {
-                 	   lock (CrmMetadata)
-                    	{
-                        	if (!CrmMetadata.ContainsKey(entity.LogicalName))
-	                        {
-    	                        CrmMetadata.Add(entity.LogicalName, entity);
-        	                }
-            	        }
-                    }
-                }
-            }
-        }
         private void UpdateQueryExpressionWithCrmIQ(ITracingService tracer, QueryExpression expression)
         {
             if (expression != null && expression.LinkEntities != null)
@@ -304,7 +320,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                         List<ConditionExpression> newChildFilterCriteriaConditions = new List<ConditionExpression>();
                         for(int i = childFilter.Conditions.Count - 1; i >= 0; i--)
                         {
-                            if (CrmMetadata != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && CrmMetadata.ContainsKey(linkEntity.LinkToEntityName) && CrmMetadata[linkEntity.LinkToEntityName].PrimaryIdAttribute == childFilter.Conditions[i].AttributeName && childFilter.Conditions[i].Operator == ConditionOperator.Null)
+                            if (this.metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == childFilter.Conditions[i].AttributeName && childFilter.Conditions[i].Operator == ConditionOperator.Null)
                             {
                                 newConditions.Add(childFilter.Conditions[i]);
                                 continue;
@@ -340,11 +356,11 @@ namespace Cobalt.Components.CrmIQ.Plugin
             {
                 while (x < filter.Conditions.Count())
                 {
-                    if (CrmMetadata != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && CrmMetadata.ContainsKey(linkEntity.LinkToEntityName) && CrmMetadata[linkEntity.LinkToEntityName].PrimaryIdAttribute == filter.Conditions[x].AttributeName && filter.Conditions[x].Operator == ConditionOperator.Null)
+                    if (this.metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == filter.Conditions[x].AttributeName && filter.Conditions[x].Operator == ConditionOperator.Null)
                     {
                         if (parentLinkEntity != null && !string.IsNullOrEmpty(parentLinkEntity.LinkToEntityName))
                         {
-                            if (CrmMetadata.ContainsKey(parentLinkEntity.LinkToEntityName) && CrmMetadata[parentLinkEntity.LinkToEntityName].IsIntersect != null && CrmMetadata[parentLinkEntity.LinkToEntityName].IsIntersect.Value)
+                            if (this.metadataService.RetrieveMetadata(parentLinkEntity.LinkToEntityName) != null && this.metadataService.IsIntersect(parentLinkEntity.LinkToEntityName))
                             {
                                 if (string.IsNullOrEmpty(parentLinkEntity.EntityAlias))
                                 {
@@ -394,7 +410,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                             List<ConditionExpression> newLinkCriteriaConditions = new List<ConditionExpression>();
                             for (int i = linkEntity.LinkCriteria.Conditions.Count - 1; i >= 0; i--)
                             {
-                                if (CrmMetadata != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && CrmMetadata.ContainsKey(linkEntity.LinkToEntityName) && CrmMetadata[linkEntity.LinkToEntityName].PrimaryIdAttribute == linkEntity.LinkCriteria.Conditions[i].AttributeName && linkEntity.LinkCriteria.Conditions[i].Operator == ConditionOperator.Null)
+                                if (this.metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == linkEntity.LinkCriteria.Conditions[i].AttributeName && linkEntity.LinkCriteria.Conditions[i].Operator == ConditionOperator.Null)
                                 {
                                     newConditions.Add(linkEntity.LinkCriteria.Conditions[i]);
                                     continue;
@@ -549,7 +565,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                                                 FetchCondition innerCondition = innerFilter.Items[j] as FetchCondition;
                                                 if(innerCondition != null)
                                                 {
-                                                    if (CrmMetadata != null && linkEntity != null && CrmMetadata.ContainsKey(linkEntity.name) && CrmMetadata[linkEntity.name].PrimaryIdAttribute == innerCondition.attribute && innerCondition.@operator == FetchOperator.@null)
+                                                    if (this.metadataService != null && linkEntity != null && this.metadataService.RetrieveMetadata(linkEntity.name) != null && this.metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == innerCondition.attribute && innerCondition.@operator == FetchOperator.@null)
                                                     {
                                                         newConditions.Add(innerCondition);
                                                         continue;
@@ -671,11 +687,11 @@ namespace Cobalt.Components.CrmIQ.Plugin
             {
                 while (x < filterConditions.Count)
                 {
-                    if (CrmMetadata != null && linkEntity != null && CrmMetadata.ContainsKey(linkEntity.name) && CrmMetadata[linkEntity.name].PrimaryIdAttribute == filterConditions[x].attribute && filterConditions[x].@operator == FetchOperator.@null)
+                    if (this.metadataService != null && linkEntity != null && this.metadataService.RetrieveMetadata(linkEntity.name) != null && this.metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == filterConditions[x].attribute && filterConditions[x].@operator == FetchOperator.@null)
                     {
                         if (parentLinkEntity != null && !string.IsNullOrEmpty(parentLinkEntity.name))
                         {
-                            if (CrmMetadata.ContainsKey(parentLinkEntity.name) && CrmMetadata[parentLinkEntity.name].IsIntersect != null && CrmMetadata[parentLinkEntity.name].IsIntersect.Value)
+                            if (this.metadataService.RetrieveMetadata(parentLinkEntity.name) != null && this.metadataService.IsIntersect(parentLinkEntity.name))
                             {
                                 if (string.IsNullOrEmpty(parentLinkEntity.alias))
                                 {
@@ -740,14 +756,12 @@ namespace Cobalt.Components.CrmIQ.Plugin
 
         public QueryExpression UpdateQuery(IOrganizationService service, ITracingService tracer, QueryExpression query)
         {
-            this.LoadMetadata(service);
             UpdateQueryExpressionWithCrmIQ(tracer, query);
             return query;
         }
 
         public bool UpdateQuery(IOrganizationService service, ITracingService tracer, FetchExpression query)
         {
-            this.LoadMetadata(service);
             return UpdateFetchExpressionWithCrmIQ(tracer, query);
         }
 
@@ -880,8 +894,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
         
         public Entity[] HandleIQEvent(IOrganizationService service, Entity imageEntity)
         {
-            this.LoadMetadata(service);
-
             if (imageEntity.Attributes.ContainsKey("cobalt_name"))
             {
                 string instructionName = imageEntity.Attributes["cobalt_name"].ToString();

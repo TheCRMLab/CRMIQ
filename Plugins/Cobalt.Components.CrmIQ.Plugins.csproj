@@ -83,6 +83,7 @@
     <Compile Include="Instructions\RetrieveExistingPluginsResponse.cs" />
     <Compile Include="Instructions\UpdatePluginEntitiesInstruction.cs" />
     <Compile Include="Instructions\UpdatePluginEntitiesResponse .cs" />
+    <Compile Include="MetadataService.cs" />
     <Compile Include="PluginAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
