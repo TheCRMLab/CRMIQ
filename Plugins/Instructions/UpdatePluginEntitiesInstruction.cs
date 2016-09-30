@@ -29,7 +29,7 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
         [DataMember(EmitDefaultValue = false)]
         public List<int> ObjectTypeCodes { get; set; }
 
-        protected List<int> IneligibleEntities { get { return new List<int>() { 8, 10, 1036, 1200, 2029, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752 }; } }
+        protected List<int> IneligibleEntities { get { return new List<int>() { 8, 10, 1036, 1200, 2029, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8181, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752, 9869, 9987 }; } }
 
         public override string Execute()
         {
@@ -74,8 +74,12 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
                 else
                 {
                     string entity = (processingStep.Attributes["a1.primaryobjecttypecode"] as AliasedValue).Value.ToString();
-                    EntityMetadata metadata = Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata[entity];
-                    queriedEntities.Add(metadata.ObjectTypeCode.Value);
+                    EntityMetadata metadata = this.MetaDataService.RetrieveMetadata(entity);
+
+                    if (metadata != null && metadata.ObjectTypeCode != null && metadata.ObjectTypeCode.HasValue)
+                    {
+                        queriedEntities.Add(metadata.ObjectTypeCode.Value);
+                    }
 
                     if (AllEntities || !this.ObjectTypeCodes.Contains(metadata.ObjectTypeCode.Value))
                     {
@@ -91,7 +95,7 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
                 
                 foreach (int objectTypeCode in this.ObjectTypeCodes.Where(newOtc => !queriedEntities.Contains(newOtc)))
                 {
-                    EntityMetadata entityMetadata = Cobalt.Components.CrmIQ.Plugin.PluginAdapter.CrmMetadata.Values.FirstOrDefault(meta => meta.ObjectTypeCode == objectTypeCode);
+                    EntityMetadata entityMetadata = this.MetaDataService.RetrieveMetadataByObjectTypeCode(objectTypeCode);
                     if (entityMetadata != null)
                     {
                         Entity step = new Entity("sdkmessageprocessingstep");

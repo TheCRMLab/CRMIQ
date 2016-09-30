@@ -15,7 +15,21 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
     public abstract class Instruction
     {
         public abstract string Execute();
-        public IOrganizationService Service { get; set; }
+        private IOrganizationService service;
+        public IOrganizationService Service
+        {
+            get
+            {
+                return this.service;
+            }
+            set
+            {
+                this.MetaDataService = new MetadataService(value);
+                this.service = value;
+            }
+        }
+
+        protected MetadataService MetaDataService;
 
         protected Entity ExecuteFetchScalar(string fetchXml)
         {
