@@ -687,7 +687,12 @@ namespace Cobalt.Components.CrmIQ.Plugin
             {
                 while (x < filterConditions.Count)
                 {
-                    if (this.metadataService != null && linkEntity != null && this.metadataService.RetrieveMetadata(linkEntity.name) != null && this.metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == filterConditions[x].attribute && filterConditions[x].@operator == FetchOperator.@null)
+                    if (this.metadataService != null 
+                        && linkEntity != null 
+                        && linkEntity.linktype != LinkType.outer.ToString()
+                        && this.metadataService.RetrieveMetadata(linkEntity.name) != null 
+                        && this.metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == filterConditions[x].attribute 
+                        && filterConditions[x].@operator == FetchOperator.@null)
                     {
                         if (parentLinkEntity != null && !string.IsNullOrEmpty(parentLinkEntity.name))
                         {
