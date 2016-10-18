@@ -6,15 +6,12 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
 {
     [DataContract]
     [Serializable()]
-    public class UpdatePluginEntitiesResponse  
+    public class RetrieveExistingPersistIqQueryPluginsResponse
     {
-        public UpdatePluginEntitiesResponse  ()
+        public RetrieveExistingPersistIqQueryPluginsResponse()
         {
             this.ObjectTypeCodes = new List<int>();
         }
-
-        [DataMember(EmitDefaultValue = true)]
-        public bool AllEntities { get; set; }
 
         [DataMember(EmitDefaultValue = false)]
         public List<int> ObjectTypeCodes { get; set; }

@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
-using Microsoft.Xrm.Sdk.Query;
 
 namespace Cobalt.Components.CrmIQ.Plugin.Instructions
 {
@@ -58,5 +52,4 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
             return returnValue;
         }
     }
-
 }

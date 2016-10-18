@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
-using Microsoft.Xrm.Sdk.Query;
 
 namespace Cobalt.Components.CrmIQ.Plugin.Instructions
 {
@@ -29,7 +24,7 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
         [DataMember(EmitDefaultValue = false)]
         public List<int> ObjectTypeCodes { get; set; }
 
-        protected List<int> IneligibleEntities { get { return new List<int>() { 8, 10, 1036, 1200, 2029, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8181, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752, 9869, 9987 }; } }
+        protected List<int> IneligibleEntities { get { return new List<int>() { 8, 10, 1036, 1039, 1200, 2029, 4230, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8181, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752, 9869, 9987 }; } }
 
         public override string Execute()
         {

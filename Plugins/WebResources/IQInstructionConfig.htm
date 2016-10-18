@@ -67,11 +67,14 @@
         var dataSetName = "cobalt_iqeventhandlerSet"
         var IQEventhandler = null;
         var IqResponse = null;
-        var IneligibleEntitiesObjectCodes = [8, 10, 1036, 1200, 2029, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8181, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752, 9869, 9987];
+        var IqPersistEventhandler = null;
+        var IqPersist = null;
+        var IneligibleEntitiesObjectCodes = [8, 10, 1036, 1039, 1200, 2029, 4230, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8181, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752, 9869, 9987];
         var entityList = null;
 
         $("#entityTableLoading").show();
         GenerateInitialList();
+        PopulateIqPersistence()
         SDK.Metadata.RetrieveAllEntities(SDK.Metadata.EntityFilters.Entity,
 			false,
 			successRetrieveAllEntities,
@@ -110,7 +113,7 @@
                     //Success
                     IQEventhandler = JSON.parse(iqRequest.responseText).d;
                     IqResponse = JSON.parse(IQEventhandler.cobalt_Response);
-                    deleteEventHandler();
+                    deleteEventHandler(IQEventhandler);
                 }
                 else {
                     //Failure
@@ -119,10 +122,54 @@
             }
         };
 
-        function deleteEventHandler() {
+        function PopulateIqPersistence() {
+            var entity = new Object();
+            entity.cobalt_name = "RetrieveExistingPersistIqQueryPlugins";
+
+            var jsonEntity = window.JSON.stringify(entity);
+            var createRecordReq = new XMLHttpRequest();
+            var ODataPath = Xrm.Page.context.prependOrgName("/xrmservices/2011/organizationdata.svc");
+            createRecordReq.open('POST', ODataPath + "/cobalt_iqeventhandlerSet", false);
+            createRecordReq.setRequestHeader("Accept", "application/json");
+            createRecordReq.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            createRecordReq.onreadystatechange = function () {
+                IqPersistenceCallback(this);
+            };
+            createRecordReq.send(jsonEntity);
+        }
+
+        function IqPersistenceCallback(iqRequest) {
+            if (iqRequest.readyState == 4 /* complete */) {
+                iqRequest.onreadystatechange = null; //avoids memory leaks
+                if (iqRequest.status == 201) {
+                    //Success
+                    alert("Iq Persist callback made successfully");
+                    IqPersistEventhandler = JSON.parse(iqRequest.responseText).d;
+                    IqPersist = JSON.parse(IqPersistEventhandler.cobalt_Response);
+                    deleteEventHandler(IqPersistEventhandler);
+
+                    if(IqPersist != null && IqPersist.ObjectTypeCodes != null && IqPersist.ObjectTypeCodes.length > 0)
+                    {
+                        $("#persistSelected").prop("checked", true);
+                    }
+                    else
+                    {
+                        $("#persistNotSelected").prop("checked", true);
+                    }
+                }
+                else {
+                    //Failure
+                    alert("Iq Persist callback failed");
+                    errorHandler(iqRequest);
+                    $("#persistNotSelected").prop("checked", true);
+                }
+            }
+        };
+
+        function deleteEventHandler(eventHandler) {
             var deleteRecordReq = new XMLHttpRequest();
             var ODataPath = Xrm.Page.context.prependOrgName("/xrmservices/2011/organizationdata.svc");
-            deleteRecordReq.open('POST', ODataPath + "/cobalt_iqeventhandlerSet(guid'" + IQEventhandler.cobalt_iqeventhandlerId.toString() + "')", true);
+            deleteRecordReq.open('POST', ODataPath + "/cobalt_iqeventhandlerSet(guid'" + eventHandler.cobalt_iqeventhandlerId.toString() + "')", true);
             deleteRecordReq.setRequestHeader("Accept", "application/json");
             deleteRecordReq.setRequestHeader("X-HTTP-Method", "DELETE");
             deleteRecordReq.setRequestHeader("Content-Type", "application/json; charset=utf-8");
@@ -130,7 +177,7 @@
                 deleteRecordReqCallBack(this);
             };
 
-            deleteRecordReq.send(null);
+            //deleteRecordReq.send(null);
         }
 
         function deleteRecordReqCallBack(iqRequest) {
@@ -384,8 +431,49 @@
                 });
             }
 
+            var persistIq = $("#persistSelected").is(':checked');
+            UpdateIqPersistence(persistIq);
             GenerateUpdatedList(AllEntities, ObjectTypeCodes);
         }
+
+        function UpdateIqPersistence(isFeatureEnabled)
+        {
+            var entity = new Object();
+            entity.cobalt_name = "PersistIqQuery";
+            if (isFeatureEnabled) {
+                entity.cobalt_Request = '{"ObjectTypeCodes":[ 1039, 4230 ]}';
+            }
+            else {
+                entity.cobalt_Request = '{"ObjectTypeCodes":[]}';
+            }
+
+            var jsonEntity = window.JSON.stringify(entity);
+            var createRecordReq = new XMLHttpRequest();
+            var ODataPath = Xrm.Page.context.prependOrgName("/xrmservices/2011/organizationdata.svc");
+            createRecordReq.open('POST', ODataPath + "/cobalt_iqeventhandlerSet", true);
+            createRecordReq.setRequestHeader("Accept", "application/json");
+            createRecordReq.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            createRecordReq.onreadystatechange = function () {
+                iqPersistenceUpdateCallback(this);
+            };
+            createRecordReq.send(jsonEntity);
+        }
+
+        function iqPersistenceUpdateCallback(iqRequest) {
+            if (iqRequest.readyState == 4 /* complete */) {
+                iqRequest.onreadystatechange = null; //avoids memory leaks
+                if (iqRequest.status == 201) {
+                    //Success
+                    IqPersistEventhandler = JSON.parse(iqRequest.responseText).d;
+                    IqPersist = JSON.parse(IQEventhandler.cobalt_Response);
+                    deleteEventHandler(IqPersistEventhandler);
+                }
+                else {
+                    //Failure
+                    errorHandler(iqRequest);
+                }
+            }
+        };
 
         function GenerateUpdatedList(AllEntities, ObjectTypeCodes) {
             var entity = new Object();
@@ -413,7 +501,7 @@
                     IqResponse = JSON.parse(IQEventhandler.cobalt_Response);
                     $("#entityTableUpdating").fadeOut(500);
                     $("#updateButton").prop("disabled", false);
-                    deleteEventHandler();
+                    deleteEventHandler(IQEventhandler);
                     GridRowSelection();
                     RadioButtonSelection();
                 }
@@ -444,9 +532,13 @@
             <font size="3">Happy finding!</font><br><br>
 
             <form id="entityradioselection" action="">
+                <font size="3"><b>Enable IQ Persistence:</b></font><br>
+                <input name="persistSelect" id="persistSelected" style="margin-top: 3px;" type="radio" value="true">Yes<br/>
+                <input name="persistSelect" id="persistNotSelected" type="radio" value="false">No
+                <br />
                 <font size="3"><b>Enable IQ For:</b></font><br>
-                <input name="radioSelect" id="allEntitiesRadioButton" style="margin-top: 3px;" onclick="javascript: allEntitiesSelected();" type="radio" value="all">All Entities<br>
-                <input name="radioSelect" id="someEntitiesRadioButton" onclick="javascript: someEntitiesSelected();" type="radio" value="some">Some Entities<br>
+                <input name="radioSelect" id="allEntitiesRadioButton" style="margin-top: 3px;" onclick="javascript: allEntitiesSelected();" type="radio" value="all">All Entities<br/>
+                <input name="radioSelect" id="someEntitiesRadioButton" onclick="javascript: someEntitiesSelected();" type="radio" value="some">Some Entities<br/>
                 <input name="radioSelect" id="noneEntitiesRadioButton" onclick="javascript: noneEntitiesSelected();" type="radio" value="none">No Entities
             </form>
             <button id="updateButton" style="margin: 5px; height: 27px; clear: both; float: left;" onclick="javascript: sendMessage();">Save</button>

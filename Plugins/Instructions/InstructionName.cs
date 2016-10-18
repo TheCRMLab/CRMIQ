@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Cobalt.Components.CrmIQ.Plugin.Instructions
+﻿namespace Cobalt.Components.CrmIQ.Plugin.Instructions
 {
     [System.AttributeUsage(System.AttributeTargets.Class)]
     public class InstructionName : System.Attribute

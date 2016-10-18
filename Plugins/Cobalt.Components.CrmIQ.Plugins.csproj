@@ -79,6 +79,10 @@
     <Compile Include="Instructions\ConvertFetchXmlResponse.cs" />
     <Compile Include="Instructions\Instruction.cs" />
     <Compile Include="Instructions\InstructionName.cs" />
+    <Compile Include="Instructions\PersistIqQueryInstruction.cs" />
+    <Compile Include="Instructions\PersistIqQueryResponse.cs" />
+    <Compile Include="Instructions\RetrieveExistingPersistIqQueryPluginsInstruction.cs" />
+    <Compile Include="Instructions\RetrieveExistingPersistIqQueryPluginsResponse.cs" />
     <Compile Include="Instructions\RetrieveExistingPluginsInstruction.cs" />
     <Compile Include="Instructions\RetrieveExistingPluginsResponse.cs" />
     <Compile Include="Instructions\UpdatePluginEntitiesInstruction.cs" />

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
@@ -84,6 +80,49 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
                     <link-entity name=""sdkmessage"" from=""sdkmessageid"" to=""sdkmessageid"" alias=""ap"">
                       <filter type=""and"">
                         <condition attribute=""name"" operator=""eq"" value=""RetrieveMultiple"" />
+                      </filter>
+                    </link-entity>
+                  </entity>
+                </fetch>");
+        }
+
+        protected EntityCollection RetrieveSdkMessageProcessingStepsForPersistingIq()
+        {
+            return this.ExecuteFetchQuery(
+                @"<fetch version=""1.0"" output-format=""xml-platform"" mapping=""logical"" distinct=""false"">
+                  <entity name=""sdkmessageprocessingstep"">
+                    <attribute name=""name"" />
+                    <attribute name=""description"" />
+                    <attribute name=""eventhandler"" />
+                    <attribute name=""impersonatinguserid"" />
+                    <attribute name=""supporteddeployment"" />
+                    <attribute name=""statuscode"" />
+                    <attribute name=""statecode"" />
+                    <attribute name=""sdkmessagefilterid"" />
+                    <attribute name=""sdkmessageid"" />
+                    <attribute name=""filteringattributes"" />
+                    <attribute name=""configuration"" />
+                    <attribute name=""rank"" />
+                    <attribute name=""mode"" />
+                    <attribute name=""stage"" />
+                    <attribute name=""asyncautodelete"" />
+                    <link-entity name=""sdkmessagefilter"" from=""sdkmessagefilterid"" to=""sdkmessagefilterid"" visible=""false"" link-type=""outer"" alias=""a1"">
+                      <attribute name=""secondaryobjecttypecode"" />
+                      <attribute name=""primaryobjecttypecode"" />
+                    </link-entity>
+                    <link-entity name=""plugintype"" from=""plugintypeid"" to=""plugintypeid"" alias=""an"">
+                      <link-entity name=""pluginassembly"" from=""pluginassemblyid"" to=""pluginassemblyid"" alias=""ao"">
+                        <filter type=""and"">
+                          <condition attribute=""name"" operator=""eq"" value=""Cobalt.Components.CrmIQ.Plugins"" />
+                        </filter>
+                      </link-entity>
+                    </link-entity>
+                    <link-entity name=""sdkmessage"" from=""sdkmessageid"" to=""sdkmessageid"" alias=""ap"">
+                      <filter type=""or"">
+                        <condition attribute=""name"" operator=""eq"" value=""Create"" />
+                      </filter>
+                      <filter type=""or"">
+                        <condition attribute=""name"" operator=""eq"" value=""Update"" />
                       </filter>
                     </link-entity>
                   </entity>

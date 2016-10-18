@@ -177,7 +177,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                             results = this.HandleIQEvent(service, preImageEntity);
                         }
 
-                        else if (context.Depth == 1 && preImageEntity.LogicalName.ToLower() == "userquery" || preImageEntity.LogicalName.ToLower() == "savedquery")
+                        else if ((preImageEntity.LogicalName.ToLower() == "userquery" || preImageEntity.LogicalName.ToLower() == "savedquery") && (context.MessageName.ToLower() == "create" || context.MessageName.ToLower() == "update"))
                         {
                             Entity entity = this.RetrieveTargetEntity(context, serviceFactory, ParameterName.Target);
 
@@ -206,7 +206,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
 
                                     QueryExpressionToFetchXmlResponse fetch = (QueryExpressionToFetchXmlResponse)service.Execute(queryRequest);
                                     entity.Attributes["fetchxml"] = fetch.FetchXml;
-                                    service.Update(entity);
                                 }
                             }
                         }
