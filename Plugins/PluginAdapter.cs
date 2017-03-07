@@ -14,6 +14,7 @@ using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Crm.Sdk.Messages;
 using System.Runtime.Serialization.Json;
+using Cobalt.Components.CrmIQ.Plugin.Instructions;
 
 namespace Cobalt.Components.CrmIQ.Plugin
 {
@@ -62,28 +63,32 @@ namespace Cobalt.Components.CrmIQ.Plugin
 
                 if (context.Mode == 0 && context.MessageName.Equals("RetrieveMultiple"))
                 {
-                    if (context.InputParameters.Contains("Query"))
+                    EntityMetadata meta = this.metadataService.RetrieveMetadata(context.PrimaryEntityName);
+                    if (meta != null && meta.ObjectTypeCode != null && !UpdatePluginEntitiesInstruction.IneligibleEntities.Contains(meta.ObjectTypeCode.Value))
                     {
-                        if (context.InputParameters["Query"] is QueryExpression)
+                        if (context.InputParameters.Contains("Query"))
                         {
-                            QueryExpression objQueryExpression = (QueryExpression)context.InputParameters["Query"];
-                            this.UpdateQuery(service, tracer, objQueryExpression);
-                        }
-                        else if (context.InputParameters["Query"] is FetchExpression)
-                        {
-                            FetchExpression objFetchExpression = (FetchExpression)context.InputParameters["Query"];
-                            if (this.UpdateQuery(service, tracer, objFetchExpression))
+                            if (context.InputParameters["Query"] is QueryExpression)
                             {
-                                var conversionRequest = new FetchXmlToQueryExpressionRequest
+                                QueryExpression objQueryExpression = (QueryExpression)context.InputParameters["Query"];
+                                this.UpdateQuery(service, tracer, objQueryExpression);
+                            }
+                            else if (context.InputParameters["Query"] is FetchExpression)
+                            {
+                                FetchExpression objFetchExpression = (FetchExpression)context.InputParameters["Query"];
+                                if (this.UpdateQuery(service, tracer, objFetchExpression))
                                 {
-                                    FetchXml = objFetchExpression.Query
-                                };
+                                    var conversionRequest = new FetchXmlToQueryExpressionRequest
+                                    {
+                                        FetchXml = objFetchExpression.Query
+                                    };
 
 
-                                FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
-                                fetched.Query.NoLock = true;
-                                QueryExpression oneOffQuery = fetched.Query;
-                                context.InputParameters["Query"] = UpdateQuery(service, tracer, oneOffQuery);
+                                    FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
+                                    fetched.Query.NoLock = true;
+                                    QueryExpression oneOffQuery = fetched.Query;
+                                    context.InputParameters["Query"] = UpdateQuery(service, tracer, oneOffQuery);
+                                }
                             }
                         }
                     }

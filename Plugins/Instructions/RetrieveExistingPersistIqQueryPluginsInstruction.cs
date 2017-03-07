@@ -39,9 +39,7 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
             serializer.WriteObject(stream, response);
             stream.Position = 0;
             StreamReader streamReader = new StreamReader(stream);
-            string returnValue = streamReader.ReadToEnd();
-
-            return string.Empty;
+            return streamReader.ReadToEnd();
         }
     }
 }

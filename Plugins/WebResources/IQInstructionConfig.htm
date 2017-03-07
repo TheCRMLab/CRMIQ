@@ -74,7 +74,6 @@
 
         $("#entityTableLoading").show();
         GenerateInitialList();
-        PopulateIqPersistence()
         SDK.Metadata.RetrieveAllEntities(SDK.Metadata.EntityFilters.Entity,
 			false,
 			successRetrieveAllEntities,
@@ -143,7 +142,6 @@
                 iqRequest.onreadystatechange = null; //avoids memory leaks
                 if (iqRequest.status == 201) {
                     //Success
-                    alert("Iq Persist callback made successfully");
                     IqPersistEventhandler = JSON.parse(iqRequest.responseText).d;
                     IqPersist = JSON.parse(IqPersistEventhandler.cobalt_Response);
                     deleteEventHandler(IqPersistEventhandler);
@@ -317,6 +315,7 @@
             $("#entityTable").jqxGrid({ height: "60%" });
 
             RadioButtonSelection();
+            PopulateIqPersistence()
         }
 
         function RadioButtonSelection() {
@@ -526,7 +525,8 @@
             <h3 id="entityHead">Intelligent Query Configuration</h3>
             <p>
                 By default, Intelligent Query (IQ) is registered to run on all entities as a retrieve multiple plugin. This means that all entities, even if they can't be shown in the Advanced Find, will execute the IQ plugin on retrieve.
-                This configuration page allows you to enable the IQ plugin for all entities or select which Advanced Find eligibile entities for which you want IQ registered.
+                This configuration page allows you to enable the IQ plugin for all entities or select which Advanced Find eligibile entities for which you want IQ registered. Additionally, you can enable the IQ Persistence feature which will
+                allow saved views to be saved with their undelying queries modified to include the outer join conditions. This is useful if you want to use your IQ Views in Dashboard Charts or if you want to export your views to import elsewhere.
             </p>
 
             <font size="3">Happy finding!</font><br><br>
@@ -535,6 +535,7 @@
                 <font size="3"><b>Enable IQ Persistence:</b></font><br>
                 <input name="persistSelect" id="persistSelected" style="margin-top: 3px;" type="radio" value="true">Yes<br/>
                 <input name="persistSelect" id="persistNotSelected" type="radio" value="false">No
+                <br />
                 <br />
                 <font size="3"><b>Enable IQ For:</b></font><br>
                 <input name="radioSelect" id="allEntitiesRadioButton" style="margin-top: 3px;" onclick="javascript: allEntitiesSelected();" type="radio" value="all">All Entities<br/>
