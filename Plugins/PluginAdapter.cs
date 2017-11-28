@@ -64,7 +64,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                 if (context.Mode == 0 && context.MessageName.Equals("RetrieveMultiple"))
                 {
                     EntityMetadata meta = this.metadataService.RetrieveMetadata(context.PrimaryEntityName);
-                    if (meta != null && meta.ObjectTypeCode != null && !UpdatePluginEntitiesInstruction.IneligibleEntities.Contains(meta.ObjectTypeCode.Value))
+                    if (meta != null && !UpdatePluginEntitiesInstruction.IneligibleEntities.Contains(meta.LogicalName))
                     {
                         if (context.InputParameters.Contains("Query"))
                         {
@@ -189,28 +189,30 @@ namespace Cobalt.Components.CrmIQ.Plugin
                             if (entity != null && entity.Attributes != null)
                             {
                                 tracer.Trace("{0}", string.Join(", ", entity.Attributes.Keys));
-
-                                FetchExpression objFetchExpression = new FetchExpression(entity.Attributes["fetchxml"].ToString());
-                                if (this.UpdateQuery(service, tracer, objFetchExpression))
+                                if (context.MessageName.Equals("Create") || context.MessageName.Equals("Update"))
                                 {
-                                    var conversionRequest = new FetchXmlToQueryExpressionRequest
+                                    FetchExpression objFetchExpression = new FetchExpression(entity.Attributes["fetchxml"].ToString());
+                                    if (this.UpdateQuery(service, tracer, objFetchExpression))
                                     {
-                                        FetchXml = objFetchExpression.Query
-                                    };
+                                        var conversionRequest = new FetchXmlToQueryExpressionRequest
+                                        {
+                                            FetchXml = objFetchExpression.Query
+                                        };
 
 
-                                    FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
-                                    fetched.Query.NoLock = true;
-                                    QueryExpression oneOffQuery = fetched.Query;
-                                    QueryExpression qe = UpdateQuery(service, tracer, oneOffQuery);
+                                        FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
+                                        fetched.Query.NoLock = true;
+                                        QueryExpression oneOffQuery = fetched.Query;
+                                        QueryExpression qe = UpdateQuery(service, tracer, oneOffQuery);
 
-                                    var queryRequest = new QueryExpressionToFetchXmlRequest
-                                    {
-                                        Query = qe
-                                    };
+                                        var queryRequest = new QueryExpressionToFetchXmlRequest
+                                        {
+                                            Query = qe
+                                        };
 
-                                    QueryExpressionToFetchXmlResponse fetch = (QueryExpressionToFetchXmlResponse)service.Execute(queryRequest);
-                                    entity.Attributes["fetchxml"] = fetch.FetchXml;
+                                        QueryExpressionToFetchXmlResponse fetch = (QueryExpressionToFetchXmlResponse)service.Execute(queryRequest);
+                                        entity.Attributes["fetchxml"] = fetch.FetchXml;
+                                    }
                                 }
                             }
                         }
@@ -857,11 +859,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
                         }
                     }
                 }
-                else if (messagePropertyName == ParameterName.EmailId)
-                {
-                    Guid emailId = (Guid)context.InputParameters[messagePropertyName];
-                    returnValue = service.Retrieve("email", emailId, new Microsoft.Xrm.Sdk.Query.ColumnSet(true));
-                }
             }
             else if (context.OutputParameters.Contains(messagePropertyName))
             {
@@ -915,7 +912,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                         t.GetCustomAttribute<Cobalt.Components.CrmIQ.Plugin.Instructions.InstructionName>().Instruction == instructionName);
                 if (type == null)
                 {
-                    throw new ArgumentException(String.Format("Come on man, I can't find an instruction with name '{0}'", instructionName));
+                    throw new ArgumentException(String.Format("Hmmm...I can't find an instruction with name '{0}'", instructionName));
                 }
                 Cobalt.Components.CrmIQ.Plugin.Instructions.Instruction instruction = null;
                 if (String.IsNullOrEmpty(request))

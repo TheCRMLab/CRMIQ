@@ -10,13 +10,13 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
     {
         public RetrieveExistingPluginsResponse()
         {
-            this.ObjectTypeCodes = new List<int>();
+            this.Entities = new List<string>();
         }
 
         [DataMember(EmitDefaultValue = true)]
         public bool AllEntities { get; set; }
 
         [DataMember(EmitDefaultValue = false)]
-        public List<int> ObjectTypeCodes { get; set; }
+        public List<string> Entities { get; set; }
     }
 }

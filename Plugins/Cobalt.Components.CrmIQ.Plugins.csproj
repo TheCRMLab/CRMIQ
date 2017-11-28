@@ -48,14 +48,17 @@
     <AssemblyOriginatorKeyFile>CobaltPublicPrivateKeyFile.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="microsoft.crm.sdk.proxy">
-      <HintPath>..\..\..\Adapters\Crm\Platform\Crm2011\bin\Debug\microsoft.crm.sdk.proxy.dll</HintPath>
+    <Reference Include="Microsoft.Crm.Sdk.Proxy, Version=6.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>2016References\Microsoft.Crm.Sdk.Proxy.dll</HintPath>
     </Reference>
-    <Reference Include="microsoft.xrm.sdk">
-      <HintPath>..\..\..\Adapters\Crm\Platform\Crm2011\bin\Debug\microsoft.xrm.sdk.dll</HintPath>
+    <Reference Include="Microsoft.Xrm.Sdk, Version=6.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>2016References\Microsoft.Xrm.Sdk.dll</HintPath>
     </Reference>
-    <Reference Include="microsoft.xrm.sdk.workflow">
-      <HintPath>..\..\..\Adapters\Crm\Platform\Crm2011\bin\Debug\microsoft.xrm.sdk.workflow.dll</HintPath>
+    <Reference Include="Microsoft.Xrm.Sdk.Workflow, Version=6.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>2016References\Microsoft.Xrm.Sdk.Workflow.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Activities" />
@@ -91,13 +94,16 @@
     <Compile Include="PluginAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ThirdPartyAssemblies\microsoft.crm.sdk.proxy.dll" />
-    <Content Include="ThirdPartyAssemblies\microsoft.xrm.sdk.dll" />
-    <Content Include="ThirdPartyAssemblies\microsoft.xrm.sdk.workflow.dll" />
+    <Content Include="ThirdPartyAssemblies\Microsoft.Crm.Sdk.Proxy.dll" />
+    <Content Include="ThirdPartyAssemblies\Microsoft.Xrm.Sdk.dll" />
+    <Content Include="ThirdPartyAssemblies\Microsoft.Xrm.Sdk.Workflow.dll" />
     <Content Include="WebResources\IQInstructionConfig.htm" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CobaltPublicPrivateKeyFile.snk" />
+    <None Include="Solutions\CRMIQ_1_3_0_2013_managed.zip" />
+    <None Include="Solutions\CRMIQ_1_3_0_2013.zip" />
+    <None Include="Solutions\CRMIQ_1_3_0_2016.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2013.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2013_managed.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2015.zip" />
@@ -110,6 +116,7 @@
     <None Include="Solutions\CRMIQ_1_2_1_2013_managed.zip" />
     <None Include="Solutions\CRMIQ_1_2_1_2015.zip" />
     <None Include="Solutions\CRMIQ_1_2_1_2015_managed.zip" />
+    <None Include="Solutions\CRMIQ_1_3_0_2016_managed.zip" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

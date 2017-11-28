@@ -1392,6 +1392,26 @@
         olderthanxmonths,
 
         /// <remarks/>
+        [System.Xml.Serialization.XmlEnumAttribute("olderthan-x-minutes")]
+        olderthanxminutes,
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlEnumAttribute("olderthan-x-hours")]
+        olderthanxhours,
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlEnumAttribute("olderthan-x-days")]
+        olderthanxdays,
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlEnumAttribute("olderthan-x-weeks")]
+        olderthanxweeks,
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlEnumAttribute("olderthan-x-years")]
+        olderthanxyears,
+
+        /// <remarks/>
         [System.Xml.Serialization.XmlEnumAttribute("last-x-years")]
         lastxyears,
 

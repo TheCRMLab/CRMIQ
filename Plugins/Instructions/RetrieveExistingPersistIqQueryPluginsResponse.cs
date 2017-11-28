@@ -10,10 +10,10 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
     {
         public RetrieveExistingPersistIqQueryPluginsResponse()
         {
-            this.ObjectTypeCodes = new List<int>();
+            this.Entities = new List<string>();
         }
 
         [DataMember(EmitDefaultValue = false)]
-        public List<int> ObjectTypeCodes { get; set; }
+        public List<string> Entities { get; set; }
     }
 }

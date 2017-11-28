@@ -90,43 +90,41 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
         {
             return this.ExecuteFetchQuery(
                 @"<fetch version=""1.0"" output-format=""xml-platform"" mapping=""logical"" distinct=""false"">
-                  <entity name=""sdkmessageprocessingstep"">
-                    <attribute name=""name"" />
-                    <attribute name=""description"" />
-                    <attribute name=""eventhandler"" />
-                    <attribute name=""impersonatinguserid"" />
-                    <attribute name=""supporteddeployment"" />
-                    <attribute name=""statuscode"" />
-                    <attribute name=""statecode"" />
-                    <attribute name=""sdkmessagefilterid"" />
-                    <attribute name=""sdkmessageid"" />
-                    <attribute name=""filteringattributes"" />
-                    <attribute name=""configuration"" />
-                    <attribute name=""rank"" />
-                    <attribute name=""mode"" />
-                    <attribute name=""stage"" />
-                    <attribute name=""asyncautodelete"" />
-                    <link-entity name=""sdkmessagefilter"" from=""sdkmessagefilterid"" to=""sdkmessagefilterid"" visible=""false"" link-type=""outer"" alias=""a1"">
-                      <attribute name=""secondaryobjecttypecode"" />
-                      <attribute name=""primaryobjecttypecode"" />
-                    </link-entity>
-                    <link-entity name=""plugintype"" from=""plugintypeid"" to=""plugintypeid"" alias=""an"">
-                      <link-entity name=""pluginassembly"" from=""pluginassemblyid"" to=""pluginassemblyid"" alias=""ao"">
-                        <filter type=""and"">
-                          <condition attribute=""name"" operator=""eq"" value=""Cobalt.Components.CrmIQ.Plugins"" />
-                        </filter>
-                      </link-entity>
-                    </link-entity>
-                    <link-entity name=""sdkmessage"" from=""sdkmessageid"" to=""sdkmessageid"" alias=""ap"">
-                      <filter type=""or"">
-                        <condition attribute=""name"" operator=""eq"" value=""Create"" />
-                      </filter>
-                      <filter type=""or"">
-                        <condition attribute=""name"" operator=""eq"" value=""Update"" />
-                      </filter>
-                    </link-entity>
-                  </entity>
-                </fetch>");
+                      <entity name=""sdkmessageprocessingstep"">
+                        <attribute name=""name"" />
+                        <attribute name=""description"" />
+                        <attribute name=""eventhandler"" />
+                        <attribute name=""impersonatinguserid"" />
+                        <attribute name=""supporteddeployment"" />
+                        <attribute name=""statuscode"" />
+                        <attribute name=""statecode"" />
+                        <attribute name=""sdkmessagefilterid"" />
+                        <attribute name=""sdkmessageid"" />
+                        <attribute name=""filteringattributes"" />
+                        <attribute name=""configuration"" />
+                        <attribute name=""asyncautodelete"" />
+                        <link-entity name=""sdkmessagefilter"" from=""sdkmessagefilterid"" to=""sdkmessagefilterid"" visible=""false"" link-type=""outer"" alias=""a1"">
+                          <attribute name=""secondaryobjecttypecode"" />
+                          <attribute name=""primaryobjecttypecode"" />
+                        </link-entity>
+                        <link-entity name=""plugintype"" from=""plugintypeid"" to=""plugintypeid"" alias=""al"">
+                          <link-entity name=""pluginassembly"" from=""pluginassemblyid"" to=""pluginassemblyid"" alias=""am"">
+                            <filter type=""and"">
+                              <condition attribute=""name"" operator=""eq"" value=""Cobalt.Components.CrmIQ.Plugins"" />
+                            </filter>
+                          </link-entity>
+                        </link-entity>
+                        <link-entity name=""sdkmessage"" from=""sdkmessageid"" to=""sdkmessageid"" alias=""sdkmessage"">
+                          <attribute name=""name"" />
+                          <filter type=""and"">
+                            <filter type=""or"">
+                              <condition attribute=""name"" operator=""eq"" value=""Create"" />
+                              <condition attribute=""name"" operator=""eq"" value=""Update"" />
+                            </filter>
+                          </filter>
+                        </link-entity>
+                      </entity>
+                    </fetch>");
         }
     }
 }

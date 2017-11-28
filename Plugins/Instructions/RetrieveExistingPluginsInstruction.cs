@@ -34,9 +34,9 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
                     if (this.MetaDataService != null)
                     {
                         EntityMetadata metadata = this.MetaDataService.RetrieveMetadata(entity);
-                        if (metadata != null && metadata.ObjectTypeCode != null && metadata.ObjectTypeCode.HasValue)
+                        if (metadata != null)
                         {
-                            response.ObjectTypeCodes.Add(metadata.ObjectTypeCode.Value);
+                            response.Entities.Add(metadata.LogicalName);
                         }
                     }
                 }

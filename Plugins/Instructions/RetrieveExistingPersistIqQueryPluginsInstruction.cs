@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Metadata;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -12,6 +13,8 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
     [InstructionName("RetrieveExistingPersistIqQueryPlugins")]
     public class RetrieveExistingPersistIqQueryPluginsInstruction : Instruction
     {
+        private static readonly List<string> eligibleQueryEntities = new List<string> { "savedquery", "userquery" };
+
         public RetrieveExistingPersistIqQueryPluginsInstruction()
         {
         }
@@ -24,13 +27,9 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
             foreach (Entity processingStep in collection.Entities)
             {
                 string entity = (processingStep.Attributes["a1.primaryobjecttypecode"] as AliasedValue).Value.ToString();
-                if (this.MetaDataService != null)
+                if (!response.Entities.Contains(entity) && eligibleQueryEntities.Contains(entity))
                 {
-                    EntityMetadata metadata = this.MetaDataService.RetrieveMetadata(entity);
-                    if (metadata != null && metadata.ObjectTypeCode != null && metadata.ObjectTypeCode.HasValue && !response.ObjectTypeCodes.Contains(metadata.ObjectTypeCode.Value))
-                    {
-                        response.ObjectTypeCodes.Add(metadata.ObjectTypeCode.Value);
-                    }
+                    response.Entities.Add(entity);
                 }
             }
 

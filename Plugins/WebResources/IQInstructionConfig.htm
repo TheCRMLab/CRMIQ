@@ -75,9 +75,9 @@
         $("#entityTableLoading").show();
         GenerateInitialList();
         SDK.Metadata.RetrieveAllEntities(SDK.Metadata.EntityFilters.Entity,
-			false,
-			successRetrieveAllEntities,
-			errorHandler);
+            false,
+            successRetrieveAllEntities,
+            errorHandler);
 
         function generateUUID() {
             var d = new Date().getTime();
@@ -146,12 +146,10 @@
                     IqPersist = JSON.parse(IqPersistEventhandler.cobalt_Response);
                     deleteEventHandler(IqPersistEventhandler);
 
-                    if(IqPersist != null && IqPersist.ObjectTypeCodes != null && IqPersist.ObjectTypeCodes.length > 0)
-                    {
+                    if (IqPersist != null && IqPersist.Entities != null && IqPersist.Entities.length > 0) {
                         $("#persistSelected").prop("checked", true);
                     }
-                    else
-                    {
+                    else {
                         $("#persistNotSelected").prop("checked", true);
                     }
                 }
@@ -277,10 +275,10 @@
             $("#updatingPluginsImg").attr("src", clientUrl + "/WebResources/cobalt_/Images/LoadingLine.gif");
 
             var source =
-            {
-                localdata: entityList,
-                datatype: "array"
-            };
+                {
+                    localdata: entityList,
+                    datatype: "array"
+                };
             var dataAdapter = new $.jqx.dataAdapter(source, {
                 loadComplete: function (entityList) { },
                 loadError: function (xhr, status, error) { }
@@ -289,20 +287,20 @@
             while (IqResponse == null) { }
 
             $("#entityTable").jqxGrid(
-            {
-                sortable: true,
-                selectionmode: "checkbox",
-                columnsresize: true,
-                source: dataAdapter,
-                width: "98%",
-                height: "60%",
-                columns: [
-				  { text: '', datafield: 'imageSrc', editable: false, cellsrenderer: imagerenderer, sortable: false },
-				  { text: 'Display Name', editable: false, datafield: 'displayName', width: '32.20%' },
-				  { text: 'Name', editable: false, datafield: 'logicalName', width: '32.20%' },
-				  { text: 'Schema Name', editable: false, datafield: 'schemaName', width: '32.20%' }
-                ]
-            });
+                {
+                    sortable: true,
+                    selectionmode: "checkbox",
+                    columnsresize: true,
+                    source: dataAdapter,
+                    width: "98%",
+                    height: "60%",
+                    columns: [
+                        { text: '', datafield: 'imageSrc', editable: false, cellsrenderer: imagerenderer, sortable: false },
+                        { text: 'Display Name', editable: false, datafield: 'displayName', width: '32.20%' },
+                        { text: 'Name', editable: false, datafield: 'logicalName', width: '32.20%' },
+                        { text: 'Schema Name', editable: false, datafield: 'schemaName', width: '32.20%' }
+                    ]
+                });
 
             //select rows that have the plugin
             GridRowSelection();
@@ -323,8 +321,7 @@
                 allEntitiesSelected();
                 $("#allEntitiesRadioButton").prop("checked", true);
             }
-            else if($('#entityTable').jqxGrid('getselectedrowindexes').length > 0)
-            {
+            else if ($('#entityTable').jqxGrid('getselectedrowindexes').length > 0) {
                 someEntitiesSelected();
                 $("#someEntitiesRadioButton").prop("checked", true);
             }
@@ -344,7 +341,7 @@
         }
 
         function GridRowSelection() {
-            if (IqResponse != null && IqResponse.ObjectTypeCodes != null) {
+            if (IqResponse != null && IqResponse.Entities != null) {
                 var rows = $('#entityTable').jqxGrid('getrows');
                 var rowsCount = rows.length;
 
@@ -353,8 +350,8 @@
 
                     for (var j = 0; j < entityList.length; ++j) {
                         if (entityList[j].schemaName == rowValue) {
-                            for (var k = 0; k < IqResponse.ObjectTypeCodes.length; ++k) {
-                                if (entityList[j].objectTypeCode == IqResponse.ObjectTypeCodes[k]) {
+                            for (var k = 0; k < IqResponse.Entities.length; ++k) {
+                                if (entityList[j].logicalName == IqResponse.Entities[k]) {
                                     $('#entityTable').jqxGrid('selectrow', i);
                                     break;
                                 }
@@ -413,7 +410,7 @@
             $("#entityTableUpdating").fadeIn(500);
             $("#updateButton").prop("disabled", true);
 
-            var ObjectTypeCodes = new Array();
+            var Entities = new Array();
             var AllEntities = $("#allEntitiesRadioButton").is(':checked');
 
             if (AllEntities != null && !AllEntities) {
@@ -421,29 +418,28 @@
                 for (var i = 0; i < selectedRowIndexes.length; i++) {
                     var selectedRowData = $('#entityTable').jqxGrid('getrowdata', selectedRowIndexes[i]);
                     if (selectedRowData != null && selectedRowData.objectTypeCode != null) {
-                        ObjectTypeCodes[i] = selectedRowData.objectTypeCode;
+                        Entities[i] = selectedRowData.logicalName;
                     }
                 }
 
-                ObjectTypeCodes = ObjectTypeCodes.filter(function (item) {
+                Entities = Entities.filter(function (item) {
                     return !(item == null);
                 });
             }
 
             var persistIq = $("#persistSelected").is(':checked');
             UpdateIqPersistence(persistIq);
-            GenerateUpdatedList(AllEntities, ObjectTypeCodes);
+            GenerateUpdatedList(AllEntities, Entities);
         }
 
-        function UpdateIqPersistence(isFeatureEnabled)
-        {
+        function UpdateIqPersistence(isFeatureEnabled) {
             var entity = new Object();
             entity.cobalt_name = "PersistIqQuery";
             if (isFeatureEnabled) {
-                entity.cobalt_Request = '{"ObjectTypeCodes":[ 1039, 4230 ]}';
+                entity.cobalt_Request = '{"Entities":[ "userquery" ]}';
             }
             else {
-                entity.cobalt_Request = '{"ObjectTypeCodes":[]}';
+                entity.cobalt_Request = '{"Entities":[]}';
             }
 
             var jsonEntity = window.JSON.stringify(entity);
@@ -474,10 +470,10 @@
             }
         };
 
-        function GenerateUpdatedList(AllEntities, ObjectTypeCodes) {
+        function GenerateUpdatedList(AllEntities, Entities) {
             var entity = new Object();
             entity.cobalt_name = "UpdatePluginEntities";
-            entity.cobalt_Request = '{"AllEntities":' + AllEntities.toString() + ', "ObjectTypeCodes":[' + ObjectTypeCodes.toString() + ']}';
+            entity.cobalt_Request = '{"AllEntities":' + AllEntities.toString() + ', "Entities":' + window.JSON.stringify(Entities) + '}';
 
             var jsonEntity = window.JSON.stringify(entity);
             var createRecordReq = new XMLHttpRequest();
@@ -524,22 +520,18 @@
         <div style="margin: 15px;">
             <h3 id="entityHead">Intelligent Query Configuration</h3>
             <p>
-                By default, Intelligent Query (IQ) is registered to run on all entities as a retrieve multiple plugin. This means that all entities, even if they can't be shown in the Advanced Find, will execute the IQ plugin on retrieve.
-                This configuration page allows you to enable the IQ plugin for all entities or select which Advanced Find eligibile entities for which you want IQ registered. Additionally, you can enable the IQ Persistence feature which will
-                allow saved views to be saved with their undelying queries modified to include the outer join conditions. This is useful if you want to use your IQ Views in Dashboard Charts or if you want to export your views to import elsewhere.
+                By default, Intelligent Query (IQ) is registered to run on all entities as a retrieve multiple plugin. This means that all entities, even if they can't be shown in the Advanced Find, will execute the IQ plugin on retrieve. Happy finding!
             </p>
 
-            <font size="3">Happy finding!</font><br><br>
-
             <form id="entityradioselection" action="">
-                <font size="3"><b>Enable IQ Persistence:</b></font><br>
-                <input name="persistSelect" id="persistSelected" style="margin-top: 3px;" type="radio" value="true">Yes<br/>
+                <p><font size="3"><b>Enable User View Persistence </b>Warning, once a query is saved with this feature enabled you will not be able to modify the query in Advanced Find. We recommed you enable this feature temporarily to create the views you need and then disable the feature. Enabling this feature allows views saved in Advanced Find to be saved with their undelying queries modified to include the outer join conditions. This is useful if you want to use your personal IQ Views in Dashboard Charts or if you want to export your views to import elsewhere:</font></p>
+                <input name="persistSelect" id="persistSelected" style="margin-top: 3px;" type="radio" value="true">Yes<br />
                 <input name="persistSelect" id="persistNotSelected" type="radio" value="false">No
                 <br />
                 <br />
-                <font size="3"><b>Enable IQ For:</b></font><br>
-                <input name="radioSelect" id="allEntitiesRadioButton" style="margin-top: 3px;" onclick="javascript: allEntitiesSelected();" type="radio" value="all">All Entities<br/>
-                <input name="radioSelect" id="someEntitiesRadioButton" onclick="javascript: someEntitiesSelected();" type="radio" value="some">Some Entities<br/>
+                <p><font size="3"><b>Enable IQ Plugins </b>Updating this feature allows you to enable the IQ plugin for all entities ('All Entities') or select which Advanced Find eligibile entities for which you want IQ registered ('Some Entities'). You can also completely disable IQ ('No Entities'):</font></p>
+                <input name="radioSelect" id="allEntitiesRadioButton" style="margin-top: 3px;" onclick="javascript: allEntitiesSelected();" type="radio" value="all">All Entities<br />
+                <input name="radioSelect" id="someEntitiesRadioButton" onclick="javascript: someEntitiesSelected();" type="radio" value="some">Some Entities<br />
                 <input name="radioSelect" id="noneEntitiesRadioButton" onclick="javascript: noneEntitiesSelected();" type="radio" value="none">No Entities
             </form>
             <button id="updateButton" style="margin: 5px; height: 27px; clear: both; float: left;" onclick="javascript: sendMessage();">Save</button>

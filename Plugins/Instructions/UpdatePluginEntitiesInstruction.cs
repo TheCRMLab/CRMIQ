@@ -15,28 +15,28 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
     {
         public UpdatePluginEntitiesInstruction()
         {
-            this.ObjectTypeCodes = new List<int>();
+            this.Entities = new List<string>();
         }
 
         [DataMember(EmitDefaultValue = true)]
         public bool AllEntities { get; set; }
 
         [DataMember(EmitDefaultValue = false)]
-        public List<int> ObjectTypeCodes { get; set; }
+        public List<string> Entities { get; set; }
 
-        public static List<int> IneligibleEntities { get { return new List<int>() { 8, 10, 1036, 1039, 1200, 2029, 4230, 4602, 4603, 4605, 4606, 4607, 4608, 4615, 4616, 4618, 4700, 4703, 8050, 8181, 8199, 9100, 9105, 9106, 9107, 9605, 9606, 9750, 9751, 9752, 9869, 9987 }; } }
+        public static List<string> IneligibleEntities { get { return new List<string>() { "systemuser", "businessunit", "role", "savedquery", "fieldsecurityprofile", "queueitem", "userquery", "plugintype", "plugintypestatistic", "pluginassembly", "sdkmessage", "sdkmessagefilter", "sdkmessageprocessingstep", "sdkmessageprocessingstepimage", "sdkmessageprocessingstepsecureconfig", "serviceendpoint", "asyncoperation", "workflow", "tracelog", "routingrule", "routingruleitem", "report", "transactioncurrency", "mailmergetemplate", "importjob", "emailserverprofile", "mailbox", "sla", "slaitem", "slakpiinstance", "syncerror", "externalpartyitem" }; } }
 
         public override string Execute()
         {
             EntityCollection collection = RetrieveSdkMessageProcessingSteps();
 
-            List<int> queriedEntities = new List<int>();
-            if (this.ObjectTypeCodes == null)
+            List<string> queriedEntities = new List<string>();
+            if (this.Entities == null)
             {
-                this.ObjectTypeCodes = new List<int>();
+                this.Entities = new List<string>();
             }
 
-            this.ObjectTypeCodes.RemoveAll(otc => IneligibleEntities.Contains(otc));
+            this.Entities.RemoveAll(otc => IneligibleEntities.Contains(otc));
 
             foreach (Entity processingStep in collection.Entities)
             {
@@ -71,26 +71,26 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
                     string entity = (processingStep.Attributes["a1.primaryobjecttypecode"] as AliasedValue).Value.ToString();
                     EntityMetadata metadata = this.MetaDataService.RetrieveMetadata(entity);
 
-                    if (metadata != null && metadata.ObjectTypeCode != null && metadata.ObjectTypeCode.HasValue)
+                    if (metadata != null)
                     {
-                        queriedEntities.Add(metadata.ObjectTypeCode.Value);
+                        queriedEntities.Add(metadata.LogicalName);
                     }
 
-                    if (AllEntities || !this.ObjectTypeCodes.Contains(metadata.ObjectTypeCode.Value))
+                    if (AllEntities || !this.Entities.Contains(metadata.LogicalName))
                     {
                         Service.Delete(processingStep.LogicalName, processingStep.Id);
                     }
                 }
             }
-            if (!this.AllEntities && this.ObjectTypeCodes.Any(newOtc => !queriedEntities.Contains(newOtc)))
+            if (!this.AllEntities && this.Entities.Any(newOtc => !queriedEntities.Contains(newOtc)))
             {
                 Entity message = this.RetrieveMessage();
                 Entity pluginType = this.RetrievePluginType();
                 EntityCollection filters = this.RetrieveSdkMessageFilters();
                 
-                foreach (int objectTypeCode in this.ObjectTypeCodes.Where(newOtc => !queriedEntities.Contains(newOtc)))
+                foreach (string entityName in this.Entities.Where(newOtc => !queriedEntities.Contains(newOtc)))
                 {
-                    EntityMetadata entityMetadata = this.MetaDataService.RetrieveMetadataByObjectTypeCode(objectTypeCode);
+                    EntityMetadata entityMetadata = this.MetaDataService.RetrieveMetadata(entityName);
                     if (entityMetadata != null)
                     {
                         Entity step = new Entity("sdkmessageprocessingstep");

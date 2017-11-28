@@ -14,43 +14,41 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
     {
         //System and User query object type codes
         //9602 - Goal Rollup Query, maybe needed to be added later
-        private static readonly List<int> eligibleQueryObjectTypeCodes = new List<int> { 1039, 4230 };
+        private static readonly List<string> eligibleQueryEntities = new List<string> { "savedquery", "userquery" };
 
         private static readonly List<string> eligibleSteps = new List<string>() { "Create", "Update" };
 
         public PersistIqQueryInstruction()
         {
-            this.ObjectTypeCodes = new List<int>();
+            this.Entities = new List<string>();
         }
 
         [DataMember(EmitDefaultValue = false)]
-        public List<int> ObjectTypeCodes { get; set; }
+        public List<string> Entities { get; set; }
 
         public override string Execute()
         {
             EntityCollection collection = RetrieveSdkMessageProcessingStepsForPersistingIq();
 
-            List<Tuple<int,string>> queriedEntities = new List<Tuple<int, string>>();
+            List<Tuple<string,string>> queriedEntities = new List<Tuple<string, string>>();
 
-            if (this.ObjectTypeCodes == null)
+            if (this.Entities == null)
             {
-                this.ObjectTypeCodes = new List<int>();
+                this.Entities = new List<string>();
             }
-
             //Get each sdk message processing step for both create and update
             foreach (Entity processingStep in collection.Entities)
             {
                 if (processingStep.Attributes["a1.primaryobjecttypecode"] != null)
-                { 
-                    string entity = (processingStep.Attributes["a1.primaryobjecttypecode"] as AliasedValue).Value.ToString();
-                    EntityMetadata metadata = this.MetaDataService.RetrieveMetadata(entity);
+                {
+                    string entityName = (processingStep.Attributes["a1.primaryobjecttypecode"] as AliasedValue).Value.ToString();
+                    EntityMetadata metadata = this.MetaDataService.RetrieveMetadata(entityName);
 
-                    if (metadata != null && metadata.ObjectTypeCode != null && metadata.ObjectTypeCode.HasValue)
+                    if (metadata != null)
                     {
-                        queriedEntities.Add(new Tuple<int, string>(metadata.ObjectTypeCode.Value, processingStep.Attributes["sdkmessage.name"].ToString()));
+                        queriedEntities.Add(new Tuple<string, string>(metadata.LogicalName, processingStep.Attributes["sdkmessage.name"].ToString()));
                     }
-
-                    if (!this.ObjectTypeCodes.Contains(metadata.ObjectTypeCode.Value) || !eligibleQueryObjectTypeCodes.Contains(metadata.ObjectTypeCode.Value))
+                    if (this.Entities.Contains(metadata.LogicalName) || eligibleQueryEntities.Contains(metadata.LogicalName))
                     {
                         Service.Delete(processingStep.LogicalName, processingStep.Id);
                     }
@@ -59,15 +57,15 @@ namespace Cobalt.Components.CrmIQ.Plugin.Instructions
 
             Entity pluginType = this.RetrievePluginType();
             //Create steps for object type codes that do not have one already.
-            foreach (int objectTypeCode in this.ObjectTypeCodes)
+            foreach (string entityName in this.Entities)
             {
                 foreach(string stepName in eligibleSteps)
                 {
-                    if(!queriedEntities.Contains(new Tuple<int, string>(objectTypeCode, stepName)))
+                    if(!queriedEntities.Contains(new Tuple<string, string>(entityName, stepName)))
                     {
                         EntityCollection filters = this.RetrieveSdkMessageFilters(stepName);
                         Entity message = this.RetrieveMessage(stepName);
-                        EntityMetadata entityMetadata = this.MetaDataService.RetrieveMetadataByObjectTypeCode(objectTypeCode);
+                        EntityMetadata entityMetadata = this.MetaDataService.RetrieveMetadata(entityName);
 
                         if (entityMetadata != null)
                         {
