@@ -101,8 +101,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="CobaltPublicPrivateKeyFile.snk" />
-    <None Include="Solutions\CRMIQ_1_3_0_2013_managed.zip" />
-    <None Include="Solutions\CRMIQ_1_3_0_2013.zip" />
+    <None Include="Solutions\CRMIQ_1_3_0_2013_2015_managed.zip" />
+    <None Include="Solutions\CRMIQ_1_3_0_2013_2015.zip" />
     <None Include="Solutions\CRMIQ_1_3_0_2016.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2013.zip" />
     <None Include="Solutions\CRMIQ_1_1_1_2013_managed.zip" />
