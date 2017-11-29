@@ -18,30 +18,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
             this.allMetadataLoaded = false;
         }
 
-        private void LoadAllEntityMetadata()
-        {
-            if (!this.allMetadataLoaded)
-            {
-                this.crmMetadata = new SortedDictionary<string, EntityMetadata>();
-
-                RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest();
-                request.EntityFilters = Microsoft.Xrm.Sdk.Metadata.EntityFilters.Entity;
-                RetrieveAllEntitiesResponse response;
-                response = (RetrieveAllEntitiesResponse)service.Execute(request);
-                if (response != null)
-                {
-                    foreach (Microsoft.Xrm.Sdk.Metadata.EntityMetadata entity in response.EntityMetadata)
-                    {
-                        if (!this.crmMetadata.ContainsKey(entity.LogicalName))
-                        {
-                            this.crmMetadata.Add(entity.LogicalName, entity);
-                        }
-                    }
-                }
-
-                this.allMetadataLoaded = true;
-            }
-        }
 
         public EntityMetadata RetrieveMetadata(string entityName)
         {
@@ -66,16 +42,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
             }
 
             return null;
-        }
-
-        public EntityMetadata RetrieveMetadataByObjectTypeCode(int objectTypeCode)
-        {
-            if (this.crmMetadata == null)
-            {
-                this.LoadAllEntityMetadata();
-            }
-
-            return this.crmMetadata.Values.FirstOrDefault(x => x.ObjectTypeCode != null && x.ObjectTypeCode.Value == objectTypeCode);
         }
 
         public bool IsIntersect(string entityName)

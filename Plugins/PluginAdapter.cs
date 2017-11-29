@@ -37,7 +37,6 @@ namespace Cobalt.Components.CrmIQ.Plugin
     }
     public class PluginAdapter : IPlugin
     {
-        protected MetadataService metadataService;
         public PluginAdapter(string unsecure, string secure)
         {
         }
@@ -52,7 +51,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
             {
                 IOrganizationService service = serviceFactory.CreateOrganizationService(null);
                 IPluginExecutionContext context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
-                this.metadataService = new MetadataService(service);
+                MetadataService metadataService = new MetadataService(service);
 
                 tracer.Trace("Current Depth: {0}", context.Depth);
                 Entity preImageEntity = null;
@@ -63,7 +62,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
 
                 if (context.Mode == 0 && context.MessageName.Equals("RetrieveMultiple"))
                 {
-                    EntityMetadata meta = this.metadataService.RetrieveMetadata(context.PrimaryEntityName);
+                    EntityMetadata meta = metadataService.RetrieveMetadata(context.PrimaryEntityName);
                     if (meta != null && !UpdatePluginEntitiesInstruction.IneligibleEntities.Contains(meta.LogicalName))
                     {
                         if (context.InputParameters.Contains("Query"))
@@ -71,12 +70,12 @@ namespace Cobalt.Components.CrmIQ.Plugin
                             if (context.InputParameters["Query"] is QueryExpression)
                             {
                                 QueryExpression objQueryExpression = (QueryExpression)context.InputParameters["Query"];
-                                this.UpdateQuery(service, tracer, objQueryExpression);
+                                this.UpdateQuery(metadataService, service, tracer, objQueryExpression);
                             }
                             else if (context.InputParameters["Query"] is FetchExpression)
                             {
                                 FetchExpression objFetchExpression = (FetchExpression)context.InputParameters["Query"];
-                                if (this.UpdateQuery(service, tracer, objFetchExpression))
+                                if (this.UpdateQuery(metadataService, service, tracer, objFetchExpression))
                                 {
                                     var conversionRequest = new FetchXmlToQueryExpressionRequest
                                     {
@@ -87,7 +86,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                                     FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
                                     fetched.Query.NoLock = true;
                                     QueryExpression oneOffQuery = fetched.Query;
-                                    context.InputParameters["Query"] = UpdateQuery(service, tracer, oneOffQuery);
+                                    context.InputParameters["Query"] = UpdateQuery(metadataService, service, tracer, oneOffQuery);
                                 }
                             }
                         }
@@ -101,7 +100,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                 else if ((context.MessageName.ToLower() == "addmembersbyfetchxml" || context.MessageName.ToLower() == "removemembersbyfetchxml") && context.InputParameters.ContainsKey("FetchXml"))
                 {
                     FetchExpression objFetchExpression = new FetchExpression(context.InputParameters["FetchXml"].ToString());
-                    if (this.UpdateQuery(service, tracer, objFetchExpression))
+                    if (this.UpdateQuery(metadataService, service, tracer, objFetchExpression))
                     {
                         var conversionRequest = new FetchXmlToQueryExpressionRequest
                         {
@@ -112,7 +111,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                         FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
                         fetched.Query.NoLock = true;
                         QueryExpression oneOffQuery = fetched.Query;
-                        QueryExpression qe = UpdateQuery(service, tracer, oneOffQuery);
+                        QueryExpression qe = UpdateQuery(metadataService, service, tracer, oneOffQuery);
 
                         var queryRequest = new QueryExpressionToFetchXmlRequest
                         {
@@ -192,7 +191,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                                 if (context.MessageName.Equals("Create") || context.MessageName.Equals("Update"))
                                 {
                                     FetchExpression objFetchExpression = new FetchExpression(entity.Attributes["fetchxml"].ToString());
-                                    if (this.UpdateQuery(service, tracer, objFetchExpression))
+                                    if (this.UpdateQuery(metadataService, service, tracer, objFetchExpression))
                                     {
                                         var conversionRequest = new FetchXmlToQueryExpressionRequest
                                         {
@@ -203,7 +202,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                                         FetchXmlToQueryExpressionResponse fetched = (FetchXmlToQueryExpressionResponse)service.Execute(conversionRequest);
                                         fetched.Query.NoLock = true;
                                         QueryExpression oneOffQuery = fetched.Query;
-                                        QueryExpression qe = UpdateQuery(service, tracer, oneOffQuery);
+                                        QueryExpression qe = UpdateQuery(metadataService, service, tracer, oneOffQuery);
 
                                         var queryRequest = new QueryExpressionToFetchXmlRequest
                                         {
@@ -273,7 +272,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
         #endregion
 
 
-        private void UpdateQueryExpressionWithCrmIQ(ITracingService tracer, QueryExpression expression)
+        private void UpdateQueryExpressionWithCrmIQ(MetadataService metadataService, ITracingService tracer, QueryExpression expression)
         {
             if (expression != null && expression.LinkEntities != null)
             {
@@ -281,7 +280,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                 while (x < expression.LinkEntities.Count())
                 {
                     List<FilterExpression> filterExpressionList = null;
-                    expression.LinkEntities[x] = CrmIQLinkEntityUpdate(expression, null, expression.LinkEntities[x], out filterExpressionList);
+                    expression.LinkEntities[x] = CrmIQLinkEntityUpdate(metadataService, expression, null, expression.LinkEntities[x], out filterExpressionList);
                     if (filterExpressionList != null)
                     {
                         foreach (FilterExpression expr in filterExpressionList)
@@ -298,9 +297,9 @@ namespace Cobalt.Components.CrmIQ.Plugin
             }
         }
 
-        private void UpdateFilterExpressionRecursive(LinkEntity parentLinkEntity, LinkEntity linkEntity, DataCollection<FilterExpression> filterContainer, List<FilterExpression> outFilterExpressionList, FilterExpression childFilter)
+        private void UpdateFilterExpressionRecursive(MetadataService metadataService, LinkEntity parentLinkEntity, LinkEntity linkEntity, DataCollection<FilterExpression> filterContainer, List<FilterExpression> outFilterExpressionList, FilterExpression childFilter)
         {
-            if (UpdateFilterExpression(parentLinkEntity, linkEntity, childFilter))
+            if (UpdateFilterExpression(metadataService, parentLinkEntity, linkEntity, childFilter))
             {
                 if (outFilterExpressionList == null)
                 {
@@ -326,7 +325,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                         List<ConditionExpression> newChildFilterCriteriaConditions = new List<ConditionExpression>();
                         for(int i = childFilter.Conditions.Count - 1; i >= 0; i--)
                         {
-                            if (this.metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == childFilter.Conditions[i].AttributeName && childFilter.Conditions[i].Operator == ConditionOperator.Null)
+                            if (metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == childFilter.Conditions[i].AttributeName && childFilter.Conditions[i].Operator == ConditionOperator.Null)
                             {
                                 newConditions.Add(childFilter.Conditions[i]);
                                 continue;
@@ -350,23 +349,23 @@ namespace Cobalt.Components.CrmIQ.Plugin
                 for (int i = childFilter.Filters.Count - 1; i >= 0; i--)
                 {
                     FilterExpression subChildFilter = childFilter.Filters[i];
-                    UpdateFilterExpressionRecursive(parentLinkEntity, linkEntity, childFilter.Filters, outFilterExpressionList, subChildFilter);
+                    UpdateFilterExpressionRecursive(metadataService, parentLinkEntity, linkEntity, childFilter.Filters, outFilterExpressionList, subChildFilter);
                 }
             }
         }
 
-        private bool UpdateFilterExpression(LinkEntity parentLinkEntity, LinkEntity linkEntity, FilterExpression filter)
+        private bool UpdateFilterExpression(MetadataService metadataService, LinkEntity parentLinkEntity, LinkEntity linkEntity, FilterExpression filter)
         {
             int x = 0;
             if (filter != null && filter.Conditions != null && linkEntity != null)
             {
                 while (x < filter.Conditions.Count())
                 {
-                    if (this.metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == filter.Conditions[x].AttributeName && filter.Conditions[x].Operator == ConditionOperator.Null)
+                    if (metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == filter.Conditions[x].AttributeName && filter.Conditions[x].Operator == ConditionOperator.Null)
                     {
                         if (parentLinkEntity != null && !string.IsNullOrEmpty(parentLinkEntity.LinkToEntityName))
                         {
-                            if (this.metadataService.RetrieveMetadata(parentLinkEntity.LinkToEntityName) != null && this.metadataService.IsIntersect(parentLinkEntity.LinkToEntityName))
+                            if (metadataService.RetrieveMetadata(parentLinkEntity.LinkToEntityName) != null && metadataService.IsIntersect(parentLinkEntity.LinkToEntityName))
                             {
                                 if (string.IsNullOrEmpty(parentLinkEntity.EntityAlias))
                                 {
@@ -393,14 +392,14 @@ namespace Cobalt.Components.CrmIQ.Plugin
             return false;
         }
 
-        private LinkEntity CrmIQLinkEntityUpdate(QueryExpression expression, LinkEntity parentLinkEntity, LinkEntity linkEntity, out List<FilterExpression> outFilterExpressionList)
+        private LinkEntity CrmIQLinkEntityUpdate(MetadataService metadataService, QueryExpression expression, LinkEntity parentLinkEntity, LinkEntity linkEntity, out List<FilterExpression> outFilterExpressionList)
         {
             outFilterExpressionList = new List<FilterExpression>();
             if (expression != null)
             {
                 if (linkEntity != null && linkEntity.LinkCriteria != null && linkEntity.LinkCriteria.Conditions != null)
                 {
-                    if (UpdateFilterExpression(parentLinkEntity, linkEntity, linkEntity.LinkCriteria))
+                    if (UpdateFilterExpression(metadataService, parentLinkEntity, linkEntity, linkEntity.LinkCriteria))
                     {
                         //Or criteria move all to parent queryexpression
                         if (linkEntity.LinkCriteria.FilterOperator == LogicalOperator.Or)
@@ -416,7 +415,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                             List<ConditionExpression> newLinkCriteriaConditions = new List<ConditionExpression>();
                             for (int i = linkEntity.LinkCriteria.Conditions.Count - 1; i >= 0; i--)
                             {
-                                if (this.metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && this.metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == linkEntity.LinkCriteria.Conditions[i].AttributeName && linkEntity.LinkCriteria.Conditions[i].Operator == ConditionOperator.Null)
+                                if (metadataService != null && !string.IsNullOrEmpty(linkEntity.LinkToEntityName) && metadataService.RetrieveMetadata(linkEntity.LinkToEntityName) != null && metadataService.RetrieveMetadata(linkEntity.LinkToEntityName).PrimaryIdAttribute == linkEntity.LinkCriteria.Conditions[i].AttributeName && linkEntity.LinkCriteria.Conditions[i].Operator == ConditionOperator.Null)
                                 {
                                     newConditions.Add(linkEntity.LinkCriteria.Conditions[i]);
                                     continue;
@@ -435,7 +434,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                         for (int i = linkEntity.LinkCriteria.Filters.Count - 1; i >= 0; i--)
                         {
                             FilterExpression childFilter = linkEntity.LinkCriteria.Filters[i];
-                            UpdateFilterExpressionRecursive(parentLinkEntity, linkEntity, linkEntity.LinkCriteria.Filters, outFilterExpressionList, childFilter);
+                            UpdateFilterExpressionRecursive(metadataService, parentLinkEntity, linkEntity, linkEntity.LinkCriteria.Filters, outFilterExpressionList, childFilter);
                         }
                     }
                 }
@@ -446,7 +445,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                     while (x < linkEntity.LinkEntities.Count())
                     {
                         List<FilterExpression> filterExpressionList = null;
-                        linkEntity.LinkEntities[x] = CrmIQLinkEntityUpdate(expression, linkEntity, linkEntity.LinkEntities[x], out filterExpressionList);
+                        linkEntity.LinkEntities[x] = CrmIQLinkEntityUpdate(metadataService, expression, linkEntity, linkEntity.LinkEntities[x], out filterExpressionList);
 
                         foreach (FilterExpression expr in filterExpressionList)
                         {
@@ -463,7 +462,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
             return linkEntity;
         }
 
-        private bool UpdateFetchExpressionWithCrmIQ(ITracingService tracer, FetchExpression expression)
+        private bool UpdateFetchExpressionWithCrmIQ(MetadataService metadataService, ITracingService tracer, FetchExpression expression)
         {
             if (expression != null && !string.IsNullOrEmpty(expression.Query))
             {
@@ -486,7 +485,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                                     if (entityItem != null && entityItem is FetchLinkEntity)
                                     {
                                         List<FetchFilter> filterExpressionList = null;
-                                        if (CrmIQLinkEntityUpdate(xmlExpression, null, (FetchLinkEntity)entityItem, out filterExpressionList))
+                                        if (CrmIQLinkEntityUpdate(metadataService, xmlExpression, null, (FetchLinkEntity)entityItem, out filterExpressionList))
                                         {
                                             fetchUpdated = true;
                                             if (filterExpressionList != null)
@@ -523,7 +522,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
             return false;
         }
 
-        private bool CrmIQLinkEntityUpdate(FetchXmlExpression expression, FetchLinkEntity parentLinkEntity, FetchLinkEntity linkEntity, out List<FetchFilter> outFilterExpressionList)
+        private bool CrmIQLinkEntityUpdate(MetadataService metadataService, FetchXmlExpression expression, FetchLinkEntity parentLinkEntity, FetchLinkEntity linkEntity, out List<FetchFilter> outFilterExpressionList)
         {
             bool returnValue = false;
             outFilterExpressionList = new List<FetchFilter>();
@@ -532,7 +531,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                 FetchFilter linkCriteria = this.RetrieveLinkCriteria(linkEntity);
                 if (linkCriteria != null)
                 {
-                    if (UpdateFilterExpression(parentLinkEntity, linkEntity, linkCriteria))
+                    if (UpdateFilterExpression(metadataService, parentLinkEntity, linkEntity, linkCriteria))
                     {
                         returnValue = true;
                         //Or criteria move all to parent fetchexpression
@@ -571,7 +570,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                                                 FetchCondition innerCondition = innerFilter.Items[j] as FetchCondition;
                                                 if(innerCondition != null)
                                                 {
-                                                    if (this.metadataService != null && linkEntity != null && this.metadataService.RetrieveMetadata(linkEntity.name) != null && this.metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == innerCondition.attribute && innerCondition.@operator == FetchOperator.@null)
+                                                    if (metadataService != null && linkEntity != null && metadataService.RetrieveMetadata(linkEntity.name) != null && metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == innerCondition.attribute && innerCondition.@operator == FetchOperator.@null)
                                                     {
                                                         newConditions.Add(innerCondition);
                                                         continue;
@@ -599,7 +598,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                             FetchFilter childFilter = linkCriteria.Items[i] as FetchFilter;
                             if (childFilter != null)
                             {
-                                if (UpdateFetchFilterExpressionRecursive(parentLinkEntity, linkEntity, linkCriteria.Items, outFilterExpressionList, childFilter))
+                                if (UpdateFetchFilterExpressionRecursive(metadataService, parentLinkEntity, linkEntity, linkCriteria.Items, outFilterExpressionList, childFilter))
                                 {
                                     returnValue = true;
                                     List<object> filterList = new List<object>(linkCriteria.Items);
@@ -621,7 +620,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                     while (x < childLinks.Count)
                     {
                         List<FetchFilter> filterExpressionList = null;
-                        if (CrmIQLinkEntityUpdate(expression, linkEntity, childLinks[x], out filterExpressionList))
+                        if (CrmIQLinkEntityUpdate(metadataService, expression, linkEntity, childLinks[x], out filterExpressionList))
                         {
                             returnValue = true;
                             FetchFilter expressionCriteria = RetrieveExpressionCriteria(expression);
@@ -653,10 +652,10 @@ namespace Cobalt.Components.CrmIQ.Plugin
             return returnValue;
         }
 
-        private bool UpdateFetchFilterExpressionRecursive(FetchLinkEntity parentLinkEntity, FetchLinkEntity linkEntity, object[] filterContainer, List<FetchFilter> outFilterExpressionList, FetchFilter childFilter)
+        private bool UpdateFetchFilterExpressionRecursive(MetadataService metadataService, FetchLinkEntity parentLinkEntity, FetchLinkEntity linkEntity, object[] filterContainer, List<FetchFilter> outFilterExpressionList, FetchFilter childFilter)
         {
             bool returnValue = false;
-            if (UpdateFilterExpression(parentLinkEntity, linkEntity, childFilter))
+            if (UpdateFilterExpression(metadataService, parentLinkEntity, linkEntity, childFilter))
             {
                 if (outFilterExpressionList == null)
                 {
@@ -673,7 +672,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
                     FetchFilter subChildFilter = childFilter.Items[i] as FetchFilter;
                     if (subChildFilter != null)
                     {
-                        if (UpdateFetchFilterExpressionRecursive(parentLinkEntity, linkEntity, childFilter.Items, outFilterExpressionList, subChildFilter))
+                        if (UpdateFetchFilterExpressionRecursive(metadataService, parentLinkEntity, linkEntity, childFilter.Items, outFilterExpressionList, subChildFilter))
                         {
                             List<object> filterList = new List<object>(childFilter.Items);
                             filterList.Remove(subChildFilter);
@@ -685,7 +684,7 @@ namespace Cobalt.Components.CrmIQ.Plugin
             return returnValue;
         }
 
-        private bool UpdateFilterExpression(FetchLinkEntity parentLinkEntity, FetchLinkEntity linkEntity, FetchFilter filter)
+        private bool UpdateFilterExpression(MetadataService metadataService, FetchLinkEntity parentLinkEntity, FetchLinkEntity linkEntity, FetchFilter filter)
         {
             int x = 0;
             List<FetchCondition> filterConditions = this.RetrieveFilterCondtions(filter);
@@ -693,16 +692,16 @@ namespace Cobalt.Components.CrmIQ.Plugin
             {
                 while (x < filterConditions.Count)
                 {
-                    if (this.metadataService != null 
+                    if (metadataService != null 
                         && linkEntity != null 
                         && linkEntity.linktype != LinkType.outer.ToString()
-                        && this.metadataService.RetrieveMetadata(linkEntity.name) != null 
-                        && this.metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == filterConditions[x].attribute 
+                        && metadataService.RetrieveMetadata(linkEntity.name) != null 
+                        && metadataService.RetrieveMetadata(linkEntity.name).PrimaryIdAttribute == filterConditions[x].attribute 
                         && filterConditions[x].@operator == FetchOperator.@null)
                     {
                         if (parentLinkEntity != null && !string.IsNullOrEmpty(parentLinkEntity.name))
                         {
-                            if (this.metadataService.RetrieveMetadata(parentLinkEntity.name) != null && this.metadataService.IsIntersect(parentLinkEntity.name))
+                            if (metadataService.RetrieveMetadata(parentLinkEntity.name) != null && metadataService.IsIntersect(parentLinkEntity.name))
                             {
                                 if (string.IsNullOrEmpty(parentLinkEntity.alias))
                                 {
@@ -765,15 +764,15 @@ namespace Cobalt.Components.CrmIQ.Plugin
             return null;
         }
 
-        public QueryExpression UpdateQuery(IOrganizationService service, ITracingService tracer, QueryExpression query)
+        public QueryExpression UpdateQuery(MetadataService metadataService, IOrganizationService service, ITracingService tracer, QueryExpression query)
         {
-            UpdateQueryExpressionWithCrmIQ(tracer, query);
+            UpdateQueryExpressionWithCrmIQ(metadataService, tracer, query);
             return query;
         }
 
-        public bool UpdateQuery(IOrganizationService service, ITracingService tracer, FetchExpression query)
+        public bool UpdateQuery(MetadataService metadataService, IOrganizationService service, ITracingService tracer, FetchExpression query)
         {
-            return UpdateFetchExpressionWithCrmIQ(tracer, query);
+            return UpdateFetchExpressionWithCrmIQ(metadataService, tracer, query);
         }
 
         public string Serialize(QueryExpression query)
